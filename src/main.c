@@ -9,10 +9,13 @@
 #include <p2g/gs.h>
 
 #include <stdlib.h>
+#include <time.h>
 
 #include "draw.h"
+#include "tiles.h"
 
 int main(int argc, char *argv[]) {
+  srand(time(NULL));
   log_output_level = LOG_LEVEL_DEBUG;
   logdbg("startup\n");
 
@@ -38,6 +41,18 @@ int main(int argc, char *argv[]) {
   trace("setting screen dimensions: %dx%d", SCR_WIDTH, SCR_HEIGHT);
   draw2d_screen_dimensions(SCR_WIDTH, SCR_HEIGHT);
 
+  struct tile_map tm;
+  tile_map_init(&tm, 40, 28, 0, 0);
+  for(int yy = 0; yy < tm.height; yy++) {
+    for(int xx = 0; xx < tm.width; xx++) {
+      int r = rand() % 40;
+      logdbg("put tile %d @ %d,%d", r, xx, yy);
+      if (r < 8) {
+        set_tile(&tm, xx, yy, r);
+      }
+    }
+  }
+
   // TODO: implement :)
   load_textures();
   draw2d_clear_colour(33, 38, 63);
@@ -51,9 +66,7 @@ int main(int argc, char *argv[]) {
     bind_tileset();
     trace("put tile");
     draw2d_set_colour(0x80, 0x80, 0x80, 0x80);
-    for (int i = 0; i < 10; i++) {
-      put_tile(i*24., 100., 24., 24., 12+i);
-    }
+    draw_tile_map(&tm);
     trace("frame end");
     draw_frame_end();
     trace("draw wait");

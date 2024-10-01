@@ -6,6 +6,9 @@
 
 #include "draw.h"
 #include "tga.h"
+#include "tiles.h"
+
+#define TILE_SIZE 16
 
 static uint32_t VRAM_HEAD = 0;
 static uint32_t VRAM_SIZE = 4 * 1024 * 1024;
@@ -76,5 +79,25 @@ int load_textures() {
   tex_tileset.height = tga.header.height;
   tex_tileset.vram_addr = vram_alloc(tga.pixels_size, 256);
   return 0;
+}
+
+void draw_tile_map(struct tile_map *tm) {
+  if (!tm) {
+    logerr("cannot draw NULL tile map");
+    return;
+  }
+  for(int y = 0; y < tm->height; y++) {
+    for(int x = 0; x < tm->width; x++) {
+      unsigned char t = get_tile(tm, x, y);
+      if (t != 0 && t != TILE_INVALID) {
+        put_tile(
+            tm->world_offset_x + TILE_SIZE*x, 
+            tm->world_offset_y + TILE_SIZE*y, 
+            TILE_SIZE, 
+            TILE_SIZE, 
+            t);
+      }
+    }
+  }
 }
 

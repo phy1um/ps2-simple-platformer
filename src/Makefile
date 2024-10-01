@@ -1,5 +1,5 @@
 
-EE_OBJS=main.o draw.o tga.o
+EE_OBJS=main.o draw.o tga.o tiles.o
 EE_BIN=game.elf
 EE_INCS+=-I./include
 EE_LIBS= -ldma -ldraw -lgraph lib/libp2g.a 
