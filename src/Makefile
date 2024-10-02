@@ -3,7 +3,7 @@ SRC_FILES=$(shell find . -type f -name '*.c')
 EE_OBJS=$(patsubst %.c,%.o,$(SRC_FILES))
 EE_BIN=game.elf
 EE_INCS+=-I./include
-EE_LIBS= -ldma -ldraw -lgraph lib/libp2g.a 
+EE_LIBS= -ldma -ldraw -lgraph -lpad lib/libp2g.a 
 EE_CFLAGS+=-DLOG_TRACE
 
 all: $(EE_BIN)

@@ -7,6 +7,7 @@
 #include <p2g/log.h>
 #include <p2g/ps2draw.h>
 #include <p2g/gs.h>
+#include <p2g/pad.h>
 
 #include <stdlib.h>
 #include <time.h>
@@ -20,6 +21,8 @@ int main(int argc, char *argv[]) {
   srand(time(NULL));
   log_output_level = LOG_LEVEL_DEBUG;
   logdbg("startup\n");
+
+  pad_init();
 
   trace("gs init");
   gs_init();
@@ -68,6 +71,8 @@ int main(int argc, char *argv[]) {
   load_textures();
   draw2d_clear_colour(33, 38, 63);
   while(1) {
+    pad_frame_start();
+    pad_poll();
     trace("frame start - dma wait");
     dma_wait_fast();
     draw_frame_start();

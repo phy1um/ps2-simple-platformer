@@ -2,8 +2,6 @@
 #ifndef PAD_H
 #define PAD_H
 
-#include <lua.h>
-
 #define BUTTON_X 0
 #define BUTTON_SQUARE 1
 #define BUTTON_TRIANGLE 2
