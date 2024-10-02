@@ -13,6 +13,8 @@
 
 #include "draw.h"
 #include "tiles.h"
+#include "game/context.h"
+#include "game/player.h"
 
 int main(int argc, char *argv[]) {
   srand(time(NULL));
@@ -41,6 +43,16 @@ int main(int argc, char *argv[]) {
   trace("setting screen dimensions: %dx%d", SCR_WIDTH, SCR_HEIGHT);
   draw2d_screen_dimensions(SCR_WIDTH, SCR_HEIGHT);
 
+  struct gamectx ctx = {0};
+  size_t player_index = 0;
+  if (ctx_next_entity(&ctx, &player_index)) {
+    logerr("man really went wrong here");
+    p2g_fatal("dead on arrival");
+    return 1;
+  }
+  struct entity *player = &(ctx.entities[player_index]);
+  player_new(player, 30., 30.);
+
   struct tile_map tm;
   tile_map_init(&tm, 40, 28, 0, 0);
   for(int yy = 0; yy < tm.height; yy++) {
@@ -67,6 +79,7 @@ int main(int argc, char *argv[]) {
     trace("put tile");
     draw2d_set_colour(0x80, 0x80, 0x80, 0x80);
     draw_tile_map(&tm);
+    entity_draw_list(ctx.entities, ENTITY_MAX, &ctx);
     trace("frame end");
     draw_frame_end();
     trace("draw wait");
@@ -75,6 +88,7 @@ int main(int argc, char *argv[]) {
     graph_wait_vsync();
     trace("gs flip buffers");
     gs_flip();
+    entity_update_list(ctx.entities, ENTITY_MAX, &ctx, 1./30.);
   }
 }
 
