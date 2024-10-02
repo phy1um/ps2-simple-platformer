@@ -17,6 +17,18 @@
 #include "game/context.h"
 #include "game/player.h"
 
+void set_wall(struct gamectx *ctx, int x, int y) {
+  set_tile(&ctx->decoration, x, y, 16);
+  set_tile(&ctx->collision, x, y, 1);
+}
+
+void set_floor(struct gamectx *ctx, int x, int y) {
+  set_tile(&ctx->decoration, x, y, 9);
+  set_tile(&ctx->collision, x, y, 1);
+}
+
+
+
 int main(int argc, char *argv[]) {
   srand(time(NULL));
   log_output_level = LOG_LEVEL_DEBUG;
@@ -54,18 +66,26 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   struct entity *player = &(ctx.entities[player_index]);
-  player_new(player, 30., 30.);
+  player_new(player, 130., 300.);
 
-  struct tile_map tm;
-  tile_map_init(&tm, 40, 28, 0, 0);
-  for(int yy = 0; yy < tm.height; yy++) {
-    for(int xx = 0; xx < tm.width; xx++) {
+  tile_map_init(&ctx.decoration, 40, 28, 16, 0, 0);
+  tile_map_init(&ctx.collision, 40, 28, 16, 0, 0);
+  for(int yy = 0; yy < ctx.decoration.height; yy++) {
+    for(int xx = 0; xx < ctx.decoration.width; xx++) {
       int r = rand() % 40;
       logdbg("put tile %d @ %d,%d", r, xx, yy);
       if (r < 8) {
-        set_tile(&tm, xx, yy, r);
+        set_tile(&ctx.decoration, xx, yy, r);
       }
     }
+  }
+
+  for (int yy = 0; yy < 10; yy++) {
+    set_wall(&ctx, 3, 10+yy);
+    set_wall(&ctx, 30, 10+yy);
+  }
+  for(int xx = 0; xx < 40; xx++) {
+    set_floor(&ctx, xx, 20);
   }
 
   load_textures();
@@ -82,7 +102,7 @@ int main(int argc, char *argv[]) {
     bind_tileset();
     trace("put tile");
     draw2d_set_colour(0x80, 0x80, 0x80, 0x80);
-    draw_tile_map(&tm);
+    draw_tile_map(&ctx.decoration);
     entity_draw_list(ctx.entities, ENTITY_MAX, &ctx);
     trace("frame end");
     draw_frame_end();

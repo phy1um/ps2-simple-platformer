@@ -29,3 +29,13 @@ int ctx_free_entity(struct gamectx *ctx, size_t index) {
   return 0;
 }
 
+int ctx_is_free_point(struct gamectx *ctx, float x, float y) {
+  return !get_tile_world(&ctx->collision, x, y);
+}
+
+int ctx_is_free_box(struct gamectx *ctx, float x, float y, float w, float h) {
+  return ctx_is_free_point(ctx, x, y)
+    && ctx_is_free_point(ctx, x+w, y)
+    && ctx_is_free_point(ctx, x+w, y+h)
+    && ctx_is_free_point(ctx, x, y+h);
+}
