@@ -65,7 +65,6 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  // TODO: implement :)
   load_textures();
   draw2d_clear_colour(33, 38, 63);
   while(1) {
