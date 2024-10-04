@@ -14,15 +14,20 @@ static const float WIDTH = 9.;
 static const float HEIGHT= 16.;
 static const float HSPEED = 88.72;
 static const float GROUND_ACCEL = 37.2;
-static const float GRAVITY = 9.8;
-static const float TERMINAL_VELOCITY = 40.2;
+static const float GRAVITY = 98;
+static const float TERMINAL_VELOCITY = 288.87;
 static const float FRICTION = 55.1;
+static const float FOOT_OFFSET_Y = 0.1;
+static const float FOOT_OFFSET_X = 2.4;
 
 #define clampf(n, ma, mi) \
-  ((n) > (ma) ? ma : (n) < (mi) ? mi : n)
+  ((n) > (ma) ? ma : (n) < (mi) ? (mi) : (n))
 
 #define signof(n) \
   ((n)<0 ? -1 : 1)
+
+#define minf(a, b) \
+  ((a) < (b) ? (a) : (b))
 
 enum pstate {
   STAND,
@@ -36,6 +41,8 @@ typedef struct playerdata {
   float vx; 
   float vy; 
   enum pstate state;
+  int pushing_left;
+  int pushing_right;
 } playerdata;
 
 static int player_draw(struct entity *player, struct gamectx *ctx) {
@@ -45,6 +52,7 @@ static int player_draw(struct entity *player, struct gamectx *ctx) {
 }
 
 static int player_update(struct entity *player, struct gamectx *ctx, float dt) {
+  // horizontal stuff
   float friction = FRICTION*dt;
   float impulse_x = 0;
   if (button_held(DPAD_RIGHT)) {
@@ -73,7 +81,22 @@ static int player_update(struct entity *player, struct gamectx *ctx, float dt) {
   }
   pd->vx = dir*new_vx;
 
-  collision_resolve(ctx, player, pd->vx*dt, 0);
+  // vertical stuff
+  // do gravity
+  if (pd->state == FALL || pd->state == JUMP) {
+    pd->vy = minf(pd->vy + GRAVITY*dt, TERMINAL_VELOCITY);
+    logdbg("apply player gravity: %f", pd->vy);
+  } else {
+    float foot_x0 = player->x + FOOT_OFFSET_X; 
+    float foot_x1 = player->x + player->w - FOOT_OFFSET_X; 
+    float foot_y = player->y + player->y + FOOT_OFFSET_Y;
+    if (ctx_is_free_point(ctx, foot_x0, foot_y) && ctx_is_free_point(ctx, foot_x1, foot_y)) {
+      pd->state = FALL;
+      logdbg("not on ground, falling");
+    }
+  }
+
+  collision_resolve(ctx, player, pd->vx*dt, pd->vy*dt);
   return 0;
 }
 
@@ -86,10 +109,13 @@ int player_new(struct entity *tgt, float x, float y) {
   tgt->draw = player_draw;
   tgt->update = player_update;
   tgt->data = calloc(1, sizeof(playerdata));
+  playerdata *pd = (playerdata*)tgt->data;
+  pd->state = STAND;
   return 0;
 }
 
 static void collision_resolve(struct gamectx *ctx, struct entity *e, float dx, float dy) {
+  playerdata *pd = (playerdata *)e->data;
   float tgt_x = e->x + dx;
   float tgt_y = e->y + dy;
 
@@ -98,10 +124,26 @@ static void collision_resolve(struct gamectx *ctx, struct entity *e, float dx, f
     if (dx > 0) {
       int target_grid_place = (tgt_x+e->w) / ctx->collision.grid_size; 
       tgt_x = (target_grid_place * ctx->collision.grid_size) - e->w - 0.000001;
+      pd->pushing_right = 1;
+      
     } else if (dx < 0) {
       int target_grid_place = tgt_x / ctx->collision.grid_size;
       tgt_x = (target_grid_place+1) * ctx->collision.grid_size;
+      pd->pushing_left = 1;
     } 
+  }
+
+  // resolve vertical collision
+  if (!ctx_is_free_box(ctx, tgt_x, tgt_y, e->w, e->h)) {
+    if (dy > 0) {
+      int target_grid_place = (tgt_y+e->h) / ctx->collision.grid_size; 
+      tgt_y = (target_grid_place * ctx->collision.grid_size) - e->h - FOOT_OFFSET_Y;
+      if (pd->state != STAND) {
+        logdbg("hit the ground @ [%f, %f]", tgt_x, tgt_y);
+      }
+      pd->state = STAND;
+    }
+    // TODO: jump
   }
 
   
