@@ -164,10 +164,15 @@ static void collision_resolve(struct gamectx *ctx, struct entity *e, float dx, f
       }
       pd->state = STAND;
       pd->vy = 0;
+    } else if (dy < 0) {
+      int target_grid_place = tgt_y / ctx->collision.grid_size; 
+      tgt_y = (target_grid_place+1) * ctx->collision.grid_size;
+      if (pd->state == JUMP) {
+        pd->state = FALL;
+      }
+      pd->vy = 0;
     }
-    // TODO: jump
   }
-
   
   e->x = tgt_x;
   e->y = tgt_y;
