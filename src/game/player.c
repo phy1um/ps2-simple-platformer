@@ -19,6 +19,7 @@ static const float TERMINAL_VELOCITY = 288.87;
 static const float FRICTION = 55.1;
 static const float FOOT_OFFSET_Y = 0.1;
 static const float FOOT_OFFSET_X = 2.4;
+static const float JUMP_SPEED = -120;
 
 #define clampf(n, ma, mi) \
   ((n) > (ma) ? ma : (n) < (mi) ? (mi) : (n))
@@ -61,6 +62,8 @@ static int player_update(struct entity *player, struct gamectx *ctx, float dt) {
   if (button_held(DPAD_LEFT)) {
     impulse_x -= 1;
   }
+  int jump_impulse = button_held(BUTTON_X);
+  int do_jump = button_pressed(BUTTON_X);
   playerdata *pd = (playerdata *) player->data;
 
   if (fabs(impulse_x) > EPSILON) {
@@ -93,6 +96,11 @@ static int player_update(struct entity *player, struct gamectx *ctx, float dt) {
     if (ctx_is_free_point(ctx, foot_x0, foot_y) && ctx_is_free_point(ctx, foot_x1, foot_y)) {
       pd->state = FALL;
       logdbg("not on ground, falling");
+    } else {
+      if (do_jump) {
+        pd->state = JUMP;
+        pd->vy = JUMP_SPEED;
+      }
     }
   }
 
@@ -123,7 +131,7 @@ static void collision_resolve(struct gamectx *ctx, struct entity *e, float dx, f
   if (!ctx_is_free_box(ctx, tgt_x, e->y, e->w, e->h)) {
     if (dx > 0) {
       int target_grid_place = (tgt_x+e->w) / ctx->collision.grid_size; 
-      tgt_x = (target_grid_place * ctx->collision.grid_size) - e->w - 0.000001;
+      tgt_x = (target_grid_place * ctx->collision.grid_size) - e->w - 0.001;
       pd->pushing_right = 1;
       
     } else if (dx < 0) {
