@@ -66,9 +66,9 @@ int main(int argc, char *argv[]) {
   camera_init(&ctx.camera, cam_bounds, cam_fbox);
 
   ctx_init(&ctx);
-  ctx_load_level(&ctx, level_test_entry_init);
-  ctx_swap_active_level(&ctx);
   ctx_load_level(&ctx, level_test_adj_init);
+  ctx_swap_active_level(&ctx);
+  ctx_load_level(&ctx, level_test_entry_init);
 
   load_textures();
   draw2d_clear_colour(33, 38, 63);
@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
     graph_wait_vsync();
     trace("gs flip buffers");
     gs_flip();
-    entity_update_list(ctx.entities, ENTITY_MAX, &ctx, 1./30.);
+    ctx_update(&ctx, 1.f/30.f);
     camera_focus(&ctx.camera, player->x, player->y);
     camera_debug(&ctx.camera);
   }

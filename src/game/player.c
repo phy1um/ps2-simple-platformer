@@ -76,8 +76,8 @@ static int player_update(struct entity *player, struct gamectx *ctx, float dt) {
 
   if (fabs(impulse_x) > EPSILON) {
     if (fabs(pd->vx) > EPSILON && (signof(impulse_x) != signof(pd->vx))) {
-      logdbg("signs: impulse_x = %d, pd->vx = %d", signof(impulse_x), signof(pd->vx));
-      logdbg("dir mismatch: impulse=%f, vx=%f", impulse_x, pd->vx);
+      //logdbg("signs: impulse_x = %d, pd->vx = %d", signof(impulse_x), signof(pd->vx));
+      //logdbg("dir mismatch: impulse=%f, vx=%f", impulse_x, pd->vx);
       friction *= 2.89; 
     } else {
       friction = 0.;
@@ -96,7 +96,7 @@ static int player_update(struct entity *player, struct gamectx *ctx, float dt) {
   // do gravity
   if (pd->state == FALL || pd->state == JUMP) {
     pd->vy = minf(pd->vy + GRAVITY*dt, TERMINAL_VELOCITY);
-    logdbg("apply player gravity: %f", pd->vy);
+    //logdbg("apply player gravity: %f", pd->vy);
   } else {
     float foot_x0 = player->x + FOOT_OFFSET_X; 
     float foot_x1 = player->x + player->w - FOOT_OFFSET_X; 
@@ -105,7 +105,7 @@ static int player_update(struct entity *player, struct gamectx *ctx, float dt) {
       if (pd->state == STAND) {
         pd->state = FALL;
         pd->vy = 0;
-        logdbg("not on ground, falling @ [%f, %f]", player->x, player->y);
+        //logdbg("not on ground, falling @ [%f, %f]", player->x, player->y);
       }
     } else {
       if (pd->has_jump_buffered) {

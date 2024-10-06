@@ -35,12 +35,12 @@ int camera_focus(struct game_camera *c, float focus_x, float focus_y) {
 
   if (focus_x < fbox_x0) {
     float dx = fbox_x0 - focus_x;
-    logdbg("focus x: %f < fbox: dx = %f", focus_x, dx);
+    //logdbg("focus x: %f < fbox: dx = %f", focus_x, dx);
     c->position[0] -= dx;
     moved = 1;
   } else if (focus_x > fbox_x1) {
     float dx = focus_x - fbox_x1;
-    logdbg("focus x: %f > fbox: dx = %f", focus_x, dx);
+    //logdbg("focus x: %f > fbox: dx = %f", focus_x, dx);
     c->position[0] += dx;
     moved = 1;
   }
@@ -56,7 +56,7 @@ int camera_focus(struct game_camera *c, float focus_x, float focus_y) {
   }
 
   if (moved) {
-    logdbg("new focus box: [%f, %f] -> [%f, %f]", fbox_x0, fbox_y0, fbox_x1, fbox_y1);
+    //logdbg("new focus box: [%f, %f] -> [%f, %f]", fbox_x0, fbox_y0, fbox_x1, fbox_y1);
   }
   return 0;
 }

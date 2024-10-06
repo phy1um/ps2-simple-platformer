@@ -8,5 +8,6 @@
 
 int level_test_entry_init(struct gamectx *ctx, struct levelctx *lvl);
 int level_test_adj_init(struct gamectx *ctx, struct levelctx *lvl);
+int level_test_load_init(struct gamectx *ctx, struct levelctx *lvl);
 
 #endif

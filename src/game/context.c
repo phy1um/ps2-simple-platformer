@@ -86,22 +86,52 @@ int ctx_draw(struct gamectx *ctx) {
   bind_tileset();
   trace("draw tilemap");
   draw2d_set_colour(0x80, 0x80, 0x80, 0x80);
-  draw_tile_map(&ctx->levels[0].decoration, &ctx->camera);
-  draw_tile_map(&ctx->levels[1].decoration, &ctx->camera);
+  if (ctx->levels[0].active) {
+    draw_tile_map(&ctx->levels[0].decoration, &ctx->camera);
+  }
+  if (ctx->levels[1].active) {
+    draw_tile_map(&ctx->levels[1].decoration, &ctx->camera);
+  }
   trace("draw entities");
   entity_draw_list(ctx->entities, ENTITY_MAX, ctx);
+  return 0;
+}
+
+int ctx_update(struct gamectx *ctx, float dt) {
+  entity_update_list(ctx->entities, ENTITY_MAX, ctx, dt);
+  for (int i = 0; i < LEVEL_MAX; i++) {
+    if (ctx->levels[i].active && ctx->levels[i].update) {
+      ctx->levels[i].update(ctx, &ctx->levels[i], dt);
+    }
+  }
   return 0;
 }
 
 int ctx_load_level(struct gamectx *ctx, level_init_fn fn) {
   unsigned int tgt_index = (ctx->active_level + 1) % LEVEL_MAX;
   struct levelctx *x = &ctx->levels[tgt_index];
+  if (x->active) {
+    ctx_free_level(ctx);
+  }
   return fn(ctx, x);
 }
 
 int ctx_swap_active_level(struct gamectx *ctx) {
   unsigned int tgt_index = (ctx->active_level + 1) % LEVEL_MAX;
   ctx->active_level = tgt_index;
+  return 0;
+}
+
+int ctx_free_level(struct gamectx *ctx) {
+  unsigned int tgt_index = (ctx->active_level + 1) % LEVEL_MAX;
+  struct levelctx *x = &ctx->levels[tgt_index];
+  x->active = 0;
+  if (x->cleanup) {
+    x->cleanup(ctx, x);
+  }
+  x->heap_head = 0;
+  x->collision.width = 0;
+  x->collision.height = 0;
   return 0;
 }
 
