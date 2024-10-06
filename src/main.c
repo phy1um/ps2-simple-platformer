@@ -18,17 +18,7 @@
 #include "game/camera.h"
 #include "game/player.h"
 
-void set_wall(struct gamectx *ctx, int x, int y) {
-  set_tile(&ctx->decoration, x, y, 16);
-  set_tile(&ctx->collision, x, y, 1);
-}
-
-void set_floor(struct gamectx *ctx, int x, int y) {
-  set_tile(&ctx->decoration, x, y, 9);
-  set_tile(&ctx->collision, x, y, 1);
-}
-
-
+#include "levels/levels.h"
 
 int main(int argc, char *argv[]) {
   srand(time(NULL));
@@ -60,6 +50,7 @@ int main(int argc, char *argv[]) {
   draw2d_screen_dimensions(SCR_WIDTH, SCR_HEIGHT);
 
   struct gamectx ctx = {0};
+
   size_t player_index = 0;
   if (ctx_next_entity(&ctx, &player_index)) {
     logerr("man really went wrong here");
@@ -67,41 +58,17 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   struct entity *player = &(ctx.entities[player_index]);
-  player_new(player, 130., 200.);
 
-  tile_map_init(&ctx.decoration, 40, 28, 16, 0, 0);
-  tile_map_init(&ctx.collision, 40, 28, 16, 0, 0);
-  for(int yy = 0; yy < ctx.decoration.height; yy++) {
-    for(int xx = 0; xx < ctx.decoration.width; xx++) {
-      int r = rand() % 40;
-      logdbg("put tile %d @ %d,%d", r, xx, yy);
-      if (r < 8) {
-        set_tile(&ctx.decoration, xx, yy, r);
-      }
-    }
-  }
+  player_new(player, 130., 200.);
 
   float cam_bounds[] = {640., 448.};
   float cam_fbox[] = {50., 50.};
   camera_init(&ctx.camera, cam_bounds, cam_fbox);
 
-  for (int yy = 0; yy < 10; yy++) {
-    set_wall(&ctx, 3, 10+yy);
-    set_wall(&ctx, 38, 10+yy);
-  }
-  for(int xx = 0; xx < 40; xx++) {
-    set_floor(&ctx, xx, 20);
-  }
-  for(int xx = 0; xx < 4; xx++) {
-    set_floor(&ctx, 20+xx, 17);
-  }
-
-  for(int xx = 0; xx < 4; xx++) {
-    set_floor(&ctx, 30+xx, 15);
-  }
-
-
-
+  ctx_init(&ctx);
+  ctx_load_level(&ctx, level_test_entry_init);
+  ctx_swap_active_level(&ctx);
+  ctx_load_level(&ctx, level_test_adj_init);
 
   load_textures();
   draw2d_clear_colour(33, 38, 63);

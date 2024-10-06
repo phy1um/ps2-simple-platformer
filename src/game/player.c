@@ -1,5 +1,6 @@
 #include "entity.h"
 #include "context.h"
+#include "levels/levels.h"
 
 #include <stdlib.h>
 #include <math.h>
@@ -63,7 +64,7 @@ static int player_update(struct entity *player, struct gamectx *ctx, float dt) {
   if (button_held(DPAD_LEFT)) {
     impulse_x -= 1;
   }
-  int jump_impulse = button_held(BUTTON_X);
+  // int jump_impulse = button_held(BUTTON_X);
   playerdata *pd = (playerdata *) player->data;
   if (button_pressed(BUTTON_X)) {
     pd->has_jump_buffered = 1;
@@ -141,14 +142,14 @@ static void collision_resolve(struct gamectx *ctx, struct entity *e, float dx, f
   // resolve horiz collision  
   if (!ctx_is_free_box(ctx, tgt_x, e->y, e->w, e->h)) {
     if (dx > 0) {
-      int target_grid_place = (tgt_x+e->w) / ctx->collision.grid_size; 
-      tgt_x = (target_grid_place * ctx->collision.grid_size) - e->w - 0.001;
+      int target_grid_place = (tgt_x+e->w) / GRID_SIZE; 
+      tgt_x = (target_grid_place * GRID_SIZE) - e->w - 0.001;
       pd->pushing_right = 1;
       pd->vx = 0;
       
     } else if (dx < 0) {
-      int target_grid_place = tgt_x / ctx->collision.grid_size;
-      tgt_x = (target_grid_place+1) * ctx->collision.grid_size;
+      int target_grid_place = tgt_x / GRID_SIZE;
+      tgt_x = (target_grid_place+1) * GRID_SIZE;
       pd->pushing_left = 1;
       pd->vx = 0;
     } 
@@ -157,16 +158,16 @@ static void collision_resolve(struct gamectx *ctx, struct entity *e, float dx, f
   // resolve vertical collision
   if (!ctx_is_free_box(ctx, tgt_x, tgt_y, e->w, e->h)) {
     if (dy > 0) {
-      int target_grid_place = (tgt_y+e->h) / ctx->collision.grid_size; 
-      tgt_y = (target_grid_place * ctx->collision.grid_size) - e->h - (FOOT_OFFSET_Y*0.5);
+      int target_grid_place = (tgt_y+e->h) / GRID_SIZE; 
+      tgt_y = (target_grid_place * GRID_SIZE) - e->h - (FOOT_OFFSET_Y*0.5);
       if (pd->state != STAND) {
         logdbg("hit the ground @ [%f, %f]", tgt_x, tgt_y);
       }
       pd->state = STAND;
       pd->vy = 0;
     } else if (dy < 0) {
-      int target_grid_place = tgt_y / ctx->collision.grid_size; 
-      tgt_y = (target_grid_place+1) * ctx->collision.grid_size;
+      int target_grid_place = tgt_y / GRID_SIZE; 
+      tgt_y = (target_grid_place+1) * GRID_SIZE;
       if (pd->state == JUMP) {
         pd->state = FALL;
       }

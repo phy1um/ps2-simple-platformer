@@ -4,7 +4,7 @@ EE_OBJS=$(patsubst %.c,%.o,$(SRC_FILES))
 EE_BIN=game.elf
 EE_INCS+=-I./include
 EE_LIBS= -ldma -ldraw -lgraph -lpad lib/libp2g.a 
-EE_CFLAGS+=-DLOG_TRACE
+EE_CFLAGS+=-DLOG_TRACE -std=c11
 
 PS2HOST=192.168.20.99
 

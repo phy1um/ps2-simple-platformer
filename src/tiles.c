@@ -1,9 +1,11 @@
 
 #include <stdlib.h>
 #include <p2g/log.h>
+
 #include "tiles.h"
 
-void tile_map_init(struct tile_map *tm, int w, int h, int grid_size, int offset_x, int offset_y) {
+void tile_map_init(struct tile_map *tm, int w, int h, int grid_size, int offset_x, int offset_y, 
+    struct allocator *a) {
   if (!tm) {
     logerr("init NULL tilemap");
   }
@@ -12,7 +14,7 @@ void tile_map_init(struct tile_map *tm, int w, int h, int grid_size, int offset_
   tm->grid_size = grid_size;
   tm->world_offset_x = offset_x;
   tm->world_offset_y = offset_y;
-  tm->tiles = calloc(1, w*h);
+  tm->tiles = alloc_from(a, 1, w*h); 
 }
 
 unsigned char get_tile(struct tile_map *tm, int x, int y) {

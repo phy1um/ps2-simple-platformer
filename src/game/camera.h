@@ -14,4 +14,6 @@ int camera_focus(struct game_camera *c, float focus_x, float focus_y);
 int camera_transform(struct game_camera *c, float x, float y, float out[2]);
 void camera_debug(struct game_camera *c);
 
+int camera_contains_area(struct game_camera *c, float x, float y, float w, float h);
+
 #endif

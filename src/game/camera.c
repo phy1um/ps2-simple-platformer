@@ -85,3 +85,11 @@ void camera_debug(struct game_camera *c) {
     info("CAMERA FOCUS BOX: [%f, %f] -> [%f, %f]", fbox_x0, fbox_y0, fbox_x1, fbox_y1);
   }
 }
+
+int camera_contains_area(struct game_camera *c, float x, float y, float w, float h) {
+  return (c->position[0]+c->bounds[0] >= x && x+w >= c->position[0])
+    && (c->position[1]+c->bounds[1] >= y && y+h >= c->position[1]);
+}
+
+
+

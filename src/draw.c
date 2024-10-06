@@ -7,8 +7,9 @@
 #include "draw.h"
 #include "tga.h"
 #include "tiles.h"
+#include "levels/levels.h"
 
-#define TILE_SIZE 16
+#define TILE_SIZE GRID_SIZE
 
 static uint32_t VRAM_HEAD = 0;
 static uint32_t VRAM_SIZE = 4 * 1024 * 1024;
@@ -84,6 +85,10 @@ int load_textures() {
 void draw_tile_map(struct tile_map *tm, struct game_camera *cam) {
   if (!tm) {
     logerr("cannot draw NULL tile map");
+    return;
+  }
+  if (!camera_contains_area(cam, tm->world_offset_x, tm->world_offset_y, 
+        tm->width*GRID_SIZE, tm->height*GRID_SIZE)) {
     return;
   }
   for(int y = 0; y < tm->height; y++) {

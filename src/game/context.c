@@ -7,6 +7,41 @@
 #include "tiles.h"
 #include "../draw.h"
 
+#define LEVEL_MAX 2
+#define LEVEL_HEAP_SIZE (2*1024*1024)
+
+void *level_alloc(struct levelctx *lvl, size_t num, size_t size) {
+  size_t total = num*size;
+  trace("level bump allocator: head=%zu size=%zu ptr=%p", lvl->heap_head, total, lvl->heap);
+  if (lvl->heap_head + total > lvl->heap_size) {
+    logerr("level heap overflow");
+    return 0;
+  }
+  void *out = lvl->heap + lvl->heap_head;
+  lvl->heap_head += total;
+  return out;
+}
+
+
+int ctx_init(struct gamectx *ctx) {
+  for (int i = 0; i < LEVEL_MAX; i++) {
+    trace("init level %i", i);
+    void *heap = calloc(1, LEVEL_HEAP_SIZE);
+    if (!heap) {
+      logerr("ctx init: allocating level (%d) heap failed", i);
+      return -1;
+    }
+    ctx->levels[i].heap = heap; 
+    ctx->levels[i].heap_head = 0;
+    ctx->levels[i].heap_size = LEVEL_HEAP_SIZE;
+    ctx->levels[i].allocator.state = &ctx->levels[i];
+    ctx->levels[i].allocator.alloc = (alloc_fn) level_alloc;
+    ctx->levels[i].collision.width = 0;
+    ctx->levels[i].collision.height = 0;
+  }
+  return 0;
+}
+
 int ctx_next_entity(struct gamectx *ctx, size_t *out) {
   for (size_t i = 0; i < ENTITY_MAX; i++) {
     struct entity *e = &(ctx->entities[i]);
@@ -34,7 +69,9 @@ int ctx_free_entity(struct gamectx *ctx, size_t index) {
 }
 
 int ctx_is_free_point(struct gamectx *ctx, float x, float y) {
-  return !get_tile_world(&ctx->collision, x, y);
+  char t0 = get_tile_world(&ctx->levels[0].collision, x, y);
+  char t1 = get_tile_world(&ctx->levels[1].collision, x, y);
+  return (t0 == 0 || t0 == TILE_INVALID) && (t1 == 0 || t1 == TILE_INVALID);
 }
 
 int ctx_is_free_box(struct gamectx *ctx, float x, float y, float w, float h) {
@@ -49,9 +86,22 @@ int ctx_draw(struct gamectx *ctx) {
   bind_tileset();
   trace("draw tilemap");
   draw2d_set_colour(0x80, 0x80, 0x80, 0x80);
-  draw_tile_map(&ctx->decoration, &ctx->camera);
+  draw_tile_map(&ctx->levels[0].decoration, &ctx->camera);
+  draw_tile_map(&ctx->levels[1].decoration, &ctx->camera);
   trace("draw entities");
   entity_draw_list(ctx->entities, ENTITY_MAX, ctx);
+  return 0;
+}
+
+int ctx_load_level(struct gamectx *ctx, level_init_fn fn) {
+  unsigned int tgt_index = (ctx->active_level + 1) % LEVEL_MAX;
+  struct levelctx *x = &ctx->levels[tgt_index];
+  return fn(ctx, x);
+}
+
+int ctx_swap_active_level(struct gamectx *ctx) {
+  unsigned int tgt_index = (ctx->active_level + 1) % LEVEL_MAX;
+  ctx->active_level = tgt_index;
   return 0;
 }
 
