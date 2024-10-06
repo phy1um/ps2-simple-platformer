@@ -15,6 +15,7 @@
 #include "draw.h"
 #include "tiles.h"
 #include "game/context.h"
+#include "game/camera.h"
 #include "game/player.h"
 
 void set_wall(struct gamectx *ctx, int x, int y) {
@@ -66,7 +67,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   struct entity *player = &(ctx.entities[player_index]);
-  player_new(player, 130., 300.);
+  player_new(player, 130., 200.);
 
   tile_map_init(&ctx.decoration, 40, 28, 16, 0, 0);
   tile_map_init(&ctx.collision, 40, 28, 16, 0, 0);
@@ -80,13 +81,27 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  float cam_bounds[] = {640., 448.};
+  float cam_fbox[] = {50., 50.};
+  camera_init(&ctx.camera, cam_bounds, cam_fbox);
+
   for (int yy = 0; yy < 10; yy++) {
     set_wall(&ctx, 3, 10+yy);
-    set_wall(&ctx, 30, 10+yy);
+    set_wall(&ctx, 38, 10+yy);
   }
   for(int xx = 0; xx < 40; xx++) {
     set_floor(&ctx, xx, 20);
   }
+  for(int xx = 0; xx < 4; xx++) {
+    set_floor(&ctx, 20+xx, 17);
+  }
+
+  for(int xx = 0; xx < 4; xx++) {
+    set_floor(&ctx, 30+xx, 15);
+  }
+
+
+
 
   load_textures();
   draw2d_clear_colour(33, 38, 63);
@@ -98,12 +113,7 @@ int main(int argc, char *argv[]) {
     draw_frame_start();
     trace("upload textures");
     upload_textures();
-    trace("bind tileset");
-    bind_tileset();
-    trace("put tile");
-    draw2d_set_colour(0x80, 0x80, 0x80, 0x80);
-    draw_tile_map(&ctx.decoration);
-    entity_draw_list(ctx.entities, ENTITY_MAX, &ctx);
+    ctx_draw(&ctx);
     trace("frame end");
     draw_frame_end();
     trace("draw wait");
@@ -113,6 +123,8 @@ int main(int argc, char *argv[]) {
     trace("gs flip buffers");
     gs_flip();
     entity_update_list(ctx.entities, ENTITY_MAX, &ctx, 1./30.);
+    camera_focus(&ctx.camera, player->x, player->y);
+    camera_debug(&ctx.camera);
   }
 }
 

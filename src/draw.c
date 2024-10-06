@@ -81,7 +81,7 @@ int load_textures() {
   return 0;
 }
 
-void draw_tile_map(struct tile_map *tm) {
+void draw_tile_map(struct tile_map *tm, struct game_camera *cam) {
   if (!tm) {
     logerr("cannot draw NULL tile map");
     return;
@@ -91,8 +91,8 @@ void draw_tile_map(struct tile_map *tm) {
       unsigned char t = get_tile(tm, x, y);
       if (t != 0 && t != TILE_INVALID) {
         put_tile(
-            tm->world_offset_x + TILE_SIZE*x, 
-            tm->world_offset_y + TILE_SIZE*y, 
+            tm->world_offset_x + TILE_SIZE*x - cam->position[0], 
+            tm->world_offset_y + TILE_SIZE*y - cam->position[1], 
             TILE_SIZE, 
             TILE_SIZE, 
             t);

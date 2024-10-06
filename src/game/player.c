@@ -47,9 +47,9 @@ typedef struct playerdata {
   int has_jump_buffered;
 } playerdata;
 
-static int player_draw(struct entity *player, struct gamectx *ctx) {
+static int player_draw(struct entity *player, float sx, float sy, struct gamectx *ctx) {
   draw2d_set_colour(0xff, 0xff, 0xff, 0x80);
-  draw2d_rect(player->x, player->y, player->w, player->h);
+  draw2d_rect(sx, sy, player->w, player->h);
   return 0;
 }
 

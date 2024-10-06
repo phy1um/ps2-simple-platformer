@@ -1,7 +1,11 @@
 #include <stdlib.h>
 
 #include <p2g/log.h>
+#include <p2g/ps2draw.h>
 #include "context.h"
+#include "entity.h"
+#include "tiles.h"
+#include "../draw.h"
 
 int ctx_next_entity(struct gamectx *ctx, size_t *out) {
   for (size_t i = 0; i < ENTITY_MAX; i++) {
@@ -39,3 +43,15 @@ int ctx_is_free_box(struct gamectx *ctx, float x, float y, float w, float h) {
     && ctx_is_free_point(ctx, x+w, y+h)
     && ctx_is_free_point(ctx, x, y+h);
 }
+
+int ctx_draw(struct gamectx *ctx) {
+  trace("bind tileset");
+  bind_tileset();
+  trace("draw tilemap");
+  draw2d_set_colour(0x80, 0x80, 0x80, 0x80);
+  draw_tile_map(&ctx->decoration, &ctx->camera);
+  trace("draw entities");
+  entity_draw_list(ctx->entities, ENTITY_MAX, ctx);
+  return 0;
+}
+

@@ -11,7 +11,7 @@ struct entity {
   float y;
   float w;
   float h;
-  int(*draw)(struct entity *self, struct gamectx *ctx);
+  int(*draw)(struct entity *self, float sx, float sy, struct gamectx *ctx);
   int(*update)(struct entity *self, struct gamectx *ctx, float dt);
   void *data;
 };
