@@ -8,7 +8,6 @@
 #define SCR_WIDTH 640
 #define SCR_HEIGHT 448 
 
-uint32_t vram_alloc(uint32_t size, uint32_t align);
 int bind_tileset();
 int upload_textures();
 int load_textures();

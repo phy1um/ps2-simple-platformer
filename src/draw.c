@@ -7,24 +7,10 @@
 #include "draw.h"
 #include "tga.h"
 #include "tiles.h"
+#include "vram.h"
 #include "levels/levels.h"
 
 #define TILE_SIZE GRID_SIZE
-
-static uint32_t VRAM_HEAD = 0;
-static uint32_t VRAM_SIZE = 4 * 1024 * 1024;
-uint32_t vram_alloc(uint32_t size, uint32_t align) {
-  trace("vram alloc: %lu", size);
-  while (VRAM_HEAD % align != 0) {
-    VRAM_HEAD += 1;
-  }
-  uint32_t out = VRAM_HEAD;
-  if (out > VRAM_SIZE) {
-    p2g_fatal("VRAM overflow");
-  }
-  VRAM_HEAD += size;
-  return out;
-}
 
 struct ee_texture {
   void *pixels;
@@ -67,7 +53,7 @@ int put_tile(float x, float y, float w, float h, int index) {
   return draw2d_sprite(x,y,w,h,u0,v0, u0+uxo, v0+vyo);
 }
 
-int load_textures() {
+int load_textures(struct vram_slice *vram) {
   struct tga_data tga;
   int rc = tga_from_file("host:tiles.tga", &tga);
   if (rc) {
@@ -78,7 +64,7 @@ int load_textures() {
   tex_tileset.size = tga.pixels_size;
   tex_tileset.width = tga.header.width;
   tex_tileset.height = tga.header.height;
-  tex_tileset.vram_addr = vram_alloc(tga.pixels_size, 256);
+  tex_tileset.vram_addr = vram_alloc(vram, tga.pixels_size, 256);
   return 0;
 }
 

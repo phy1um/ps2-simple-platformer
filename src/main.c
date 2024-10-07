@@ -14,6 +14,7 @@
 
 #include "draw.h"
 #include "tiles.h"
+#include "vram.h"
 #include "game/context.h"
 #include "game/camera.h"
 #include "game/player.h"
@@ -34,11 +35,17 @@ int main(int argc, char *argv[]) {
 
   gs_set_output(SCR_WIDTH, SCR_HEIGHT, GRAPH_MODE_INTERLACED, GRAPH_MODE_NTSC,
       GRAPH_MODE_FIELD, GRAPH_DISABLE);
+
+  struct vram_slice vram = {
+    .start = 0,
+    .end = VRAM_MAX,
+  };
+  vram_slice_reset_head(&vram);
   
   trace("allocating framebuffers");
-  int fb1 = vram_alloc(gs_framebuffer_size(SCR_WIDTH, SCR_HEIGHT, GS_PSM_32), 2048);
-  int fb2 = vram_alloc(gs_framebuffer_size(SCR_WIDTH, SCR_HEIGHT, GS_PSM_32), 2048);
-  int zbuf = vram_alloc(gs_framebuffer_size(SCR_WIDTH, SCR_HEIGHT, GS_PSMZ_16), 2048);
+  int fb1 = vram_alloc(&vram, gs_framebuffer_size(SCR_WIDTH, SCR_HEIGHT, GS_PSM_32), 2048);
+  int fb2 = vram_alloc(&vram, gs_framebuffer_size(SCR_WIDTH, SCR_HEIGHT, GS_PSM_32), 2048);
+  int zbuf = vram_alloc(&vram, gs_framebuffer_size(SCR_WIDTH, SCR_HEIGHT, GS_PSMZ_16), 2048);
 
   trace("using framebuffers");
   gs_set_fields(SCR_WIDTH, SCR_HEIGHT, GS_PSM_32, GS_PSMZ_16, fb1/4, fb2/4, zbuf/4);
@@ -70,7 +77,7 @@ int main(int argc, char *argv[]) {
   ctx_swap_active_level(&ctx);
   ctx_load_level(&ctx, level_test_entry_init);
 
-  load_textures();
+  load_textures(&vram);
   draw2d_clear_colour(33, 38, 63);
   while(1) {
     pad_frame_start();
