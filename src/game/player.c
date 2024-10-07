@@ -161,7 +161,7 @@ static void collision_resolve(struct gamectx *ctx, struct entity *e, float dx, f
       int target_grid_place = (tgt_y+e->h) / GRID_SIZE; 
       tgt_y = (target_grid_place * GRID_SIZE) - e->h - (FOOT_OFFSET_Y*0.5);
       if (pd->state != STAND) {
-        logdbg("hit the ground @ [%f, %f]", tgt_x, tgt_y);
+        //logdbg("hit the ground @ [%f, %f]", tgt_x, tgt_y);
       }
       pd->state = STAND;
       pd->vy = 0;

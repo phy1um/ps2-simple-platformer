@@ -5,14 +5,17 @@
 #include "entity.h"
 #include "camera.h"
 #include "../tiles.h"
+#include "../vram.h"
 
 #define ENTITY_MAX 120
+#define LEVEL_TEXTURE_SLOTS 3
 
 struct gamectx;
 struct levelctx;
 typedef int(*level_init_fn)(struct gamectx *, struct levelctx *);
 typedef int(*level_update_fn)(struct gamectx *, struct levelctx *, float dt);
 typedef int(*level_cleanup_fn)(struct gamectx *, struct levelctx *);
+typedef int(*level_draw_fn)(struct gamectx *, struct levelctx *);
 
 struct levelctx {
   int active;
@@ -20,10 +23,13 @@ struct levelctx {
   struct tile_map collision;
   level_update_fn update;
   level_cleanup_fn cleanup;
+  level_draw_fn draw;
   void *heap;
   size_t heap_head;
   size_t heap_size;
   struct allocator allocator;
+  struct vram_slice vram;
+  void *leveldata;
 };
 
 struct gamectx {
@@ -34,9 +40,7 @@ struct gamectx {
   unsigned int active_level;
 };
 
-
-
-int ctx_init(struct gamectx *ctx);
+int ctx_init(struct gamectx *ctx, struct vram_slice *vram);
 
 int ctx_next_entity(struct gamectx *ctx, size_t *out);
 int ctx_free_entity(struct gamectx *ctx, size_t index);

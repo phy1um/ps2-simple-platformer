@@ -23,7 +23,10 @@ void *level_alloc(struct levelctx *lvl, size_t num, size_t size) {
 }
 
 
-int ctx_init(struct gamectx *ctx) {
+int ctx_init(struct gamectx *ctx, struct vram_slice *vram) {
+  vram_addr_t vram_size = vram->end - vram->head;
+  vram_addr_t vram_level_size = vram_size / LEVEL_MAX;
+  vram_addr_t vram_head = vram->head;
   for (int i = 0; i < LEVEL_MAX; i++) {
     trace("init level %i", i);
     void *heap = calloc(1, LEVEL_HEAP_SIZE);
@@ -38,6 +41,10 @@ int ctx_init(struct gamectx *ctx) {
     ctx->levels[i].allocator.alloc = (alloc_fn) level_alloc;
     ctx->levels[i].collision.width = 0;
     ctx->levels[i].collision.height = 0;
+    ctx->levels[i].vram.start = vram_head;
+    ctx->levels[i].vram.head = vram_head;
+    ctx->levels[i].vram.end = vram_head+vram_level_size;
+    vram_head += vram_level_size;
   }
   return 0;
 }
@@ -82,16 +89,21 @@ int ctx_is_free_box(struct gamectx *ctx, float x, float y, float w, float h) {
 }
 
 int ctx_draw(struct gamectx *ctx) {
-  trace("bind tileset");
-  bind_tileset();
-  trace("draw tilemap");
+  trace("draw tilemaps");
   draw2d_set_colour(0x80, 0x80, 0x80, 0x80);
   if (ctx->levels[0].active) {
-    draw_tile_map(&ctx->levels[0].decoration, &ctx->camera);
+    if (ctx->levels[0].draw) {
+      ctx->levels[0].draw(ctx, &ctx->levels[0]);
+    }
+    // draw_tile_map(&ctx->levels[0].decoration, &ctx->camera);
   }
   if (ctx->levels[1].active) {
-    draw_tile_map(&ctx->levels[1].decoration, &ctx->camera);
+    if (ctx->levels[1].draw) {
+      ctx->levels[1].draw(ctx, &ctx->levels[1]);
+    }
+    // draw_tile_map(&ctx->levels[0].decoration, &ctx->camera);
   }
+  
   trace("draw entities");
   entity_draw_list(ctx->entities, ENTITY_MAX, ctx);
   return 0;
@@ -132,6 +144,7 @@ int ctx_free_level(struct gamectx *ctx) {
   x->heap_head = 0;
   x->collision.width = 0;
   x->collision.height = 0;
+  vram_slice_reset_head(&x->vram);
   return 0;
 }
 

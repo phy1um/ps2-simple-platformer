@@ -43,12 +43,13 @@ int main(int argc, char *argv[]) {
   vram_slice_reset_head(&vram);
   
   trace("allocating framebuffers");
-  int fb1 = vram_alloc(&vram, gs_framebuffer_size(SCR_WIDTH, SCR_HEIGHT, GS_PSM_32), 2048);
-  int fb2 = vram_alloc(&vram, gs_framebuffer_size(SCR_WIDTH, SCR_HEIGHT, GS_PSM_32), 2048);
-  int zbuf = vram_alloc(&vram, gs_framebuffer_size(SCR_WIDTH, SCR_HEIGHT, GS_PSMZ_16), 2048);
+  int fb1 = vram_alloc(&vram, gs_framebuffer_size(SCR_WIDTH, SCR_HEIGHT/2, GS_PSM_32), 2048);
+  int fb2 = vram_alloc(&vram, gs_framebuffer_size(SCR_WIDTH, SCR_HEIGHT/2, GS_PSM_32), 2048);
+  int zbuf = vram_alloc(&vram, gs_framebuffer_size(SCR_WIDTH, SCR_HEIGHT/2, GS_PSMZ_16), 2048);
+  logdbg("vram head after framebuffer allocations: %u", vram.head);
 
   trace("using framebuffers");
-  gs_set_fields(SCR_WIDTH, SCR_HEIGHT, GS_PSM_32, GS_PSMZ_16, fb1/4, fb2/4, zbuf/4);
+  gs_set_fields(SCR_WIDTH, SCR_HEIGHT, GS_PSM_32, GS_PSMZ_16, fb1/64, fb2/64, zbuf/64);
 
   void *draw_buffer_ptr = calloc(1, 200*1024);
   draw_bind_buffer(draw_buffer_ptr, 200*1024);
@@ -72,12 +73,12 @@ int main(int argc, char *argv[]) {
   float cam_fbox[] = {50., 50.};
   camera_init(&ctx.camera, cam_bounds, cam_fbox);
 
-  ctx_init(&ctx);
+  ctx_init(&ctx, &vram);
   ctx_load_level(&ctx, level_test_adj_init);
   ctx_swap_active_level(&ctx);
   ctx_load_level(&ctx, level_test_entry_init);
 
-  load_textures(&vram);
+  // load_textures(&vram);
   draw2d_clear_colour(33, 38, 63);
   while(1) {
     pad_frame_start();
@@ -86,7 +87,6 @@ int main(int argc, char *argv[]) {
     dma_wait_fast();
     draw_frame_start();
     trace("upload textures");
-    upload_textures();
     ctx_draw(&ctx);
     trace("frame end");
     draw_frame_end();

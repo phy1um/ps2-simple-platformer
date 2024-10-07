@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "tga.h"
+#include "alloc.h"
 
 static int swizzle16(uint8_t *buffer, int width, int height) {
   const int bpp = 2;
@@ -46,7 +47,7 @@ static int swizzle32(uint8_t *buffer, int width, int height) {
 
 
 
-int tga_from_file(const char *file_name, struct tga_data *out) {
+int tga_from_file(const char *file_name, struct tga_data *out, struct allocator *a) {
   FILE *f = fopen(file_name, "rb"); 
   if (!f) {
     return 1;
@@ -59,7 +60,7 @@ int tga_from_file(const char *file_name, struct tga_data *out) {
   int bpp = out->header.bps/8;
   int size = out->header.width*out->header.height*bpp;
   out->pixels_size = size;
-  out->pixels = calloc(size, 1);
+  out->pixels = alloc_from(a, size, 1);
   bytes_read = fread(out->pixels, 1, size, f);
   if (bytes_read != size) {
     return 1;

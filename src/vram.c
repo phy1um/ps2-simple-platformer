@@ -8,16 +8,28 @@ vram_addr_t vram_alloc(struct vram_slice *v, size_t size, size_t align) {
     logerr("alloc from NULL vram");
     return VRAM_INVALID;
   }
-  if (v->head + size > v->end) {
+  if (v->head + size >= v->end) {
     logerr("vram alloc overflow"); 
     return VRAM_INVALID;
   }
   while(v->head % align != 0) {
     v->head += 1;
   }
+  logdbg("vram alloc @ %u for %zu (align %zu)", v->head, size, align);
   vram_addr_t out = v->head;
   v->head += size;
   return out;
+}
+
+int vram_pad(struct vram_slice *v, size_t align) {
+  if (!v) {
+    logerr("pad NULL vram");
+    return VRAM_INVALID;
+  }
+  while(v->head % align != 0) {
+    v->head += 1;
+  }
+  return 0;
 }
 
 int vram_copy_slice(struct vram_slice *from, struct vram_slice *to) {

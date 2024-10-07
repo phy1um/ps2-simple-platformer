@@ -8,10 +8,18 @@
 #define SCR_WIDTH 640
 #define SCR_HEIGHT 448 
 
-int bind_tileset();
-int upload_textures();
-int load_textures();
-int put_tile(float x, float y, float w, float h, int index);
-void draw_tile_map(struct tile_map *tm, struct game_camera *camera);
+struct ee_texture {
+  void *pixels;
+  size_t size;
+  int width;
+  int height;
+  int vram_addr;
+};
+
+int put_tile(struct ee_texture *tex, float tile_sq, float x, float y, float w, float h, int index);
+void draw_tile_map(struct tile_map *tm, float tile_sq, struct ee_texture *tex, struct game_camera *camera);
+
+int draw_bind_texture(struct ee_texture *t);
+int draw_upload_ee_texture(struct ee_texture *t);
 
 #endif

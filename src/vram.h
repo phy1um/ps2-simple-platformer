@@ -13,6 +13,7 @@ struct vram_slice {
 };
 
 vram_addr_t vram_alloc(struct vram_slice *v, size_t size, size_t align);
+int vram_pad(struct vram_slice *v, size_t align);
 int vram_copy_slice(struct vram_slice *from, struct vram_slice *to);
 int vram_slice_reset_head(struct vram_slice *v);
 

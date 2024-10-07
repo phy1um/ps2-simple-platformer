@@ -1,8 +1,9 @@
 
-#include <stdint.h>
-
 #ifndef SRC_GAME_TGA_H
 #define SRC_GAME_TGA_H
+
+#include <stdint.h>
+#include "alloc.h"
 
 struct __attribute__((__packed__)) tga_header {
   uint8_t idlen;
@@ -28,6 +29,6 @@ struct tga_data {
 };
 
 
-int tga_from_file(const char *file_name, struct tga_data *out);
+int tga_from_file(const char *file_name, struct tga_data *out, struct allocator *a);
 
 #endif
