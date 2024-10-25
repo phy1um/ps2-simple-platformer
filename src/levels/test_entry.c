@@ -23,7 +23,7 @@ static void load_textures(struct levelctx *lvl) {
   ld->tiles.size = tga.pixels_size;
   ld->tiles.width = tga.header.width;
   ld->tiles.height = tga.header.height;
-  ld->tiles.vram_addr = vram_alloc(&lvl->vram, tga.pixels_size, 256);
+  ld->tiles.vram_addr = vram_alloc(&lvl->vram, tga.pixels_size, 2048*4)/4;
   return;
 }
 
