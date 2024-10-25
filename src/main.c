@@ -33,8 +33,8 @@ int main(int argc, char *argv[]) {
   dma_channel_initialize(DMA_CHANNEL_GIF, 0, 0);
   dma_channel_fast_waits(DMA_CHANNEL_GIF);
 
-  gs_set_output(SCR_WIDTH, SCR_HEIGHT, GRAPH_MODE_NONINTERLACED, GRAPH_MODE_NTSC,
-      GRAPH_MODE_FRAME, GRAPH_DISABLE);
+  gs_set_output(SCR_WIDTH, SCR_HEIGHT, GRAPH_MODE_INTERLACED, GRAPH_MODE_NTSC,
+      GRAPH_MODE_FIELD, GRAPH_DISABLE);
 
   struct vram_slice vram = {
     .start = 0,
@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
   int fb1 = vram_alloc(&vram, gs_framebuffer_size(SCR_WIDTH, SCR_HEIGHT, GS_PSM_32), 2048);
   int fb2 = vram_alloc(&vram, gs_framebuffer_size(SCR_WIDTH, SCR_HEIGHT, GS_PSM_32), 2048);
   int zbuf = vram_alloc(&vram, gs_framebuffer_size(SCR_WIDTH, SCR_HEIGHT, GS_PSMZ_16S), 2048);
-  logdbg("vram head after framebuffer allocations: %u", vram.head);
+  logdbg("vram head after framebuffer allocations: %X (%X words)", vram.head, vram.head/4);
 
   trace("using framebuffers");
   gs_set_fields(SCR_WIDTH, SCR_HEIGHT, GS_PSM_32, GS_PSMZ_16, fb1/4, fb2/4, zbuf/4);
@@ -58,6 +58,7 @@ int main(int argc, char *argv[]) {
   draw2d_screen_dimensions(SCR_WIDTH, SCR_HEIGHT);
 
   struct gamectx ctx = {0};
+  //vram_pad(&vram, 0x12000);
 
   size_t player_index = 0;
   if (ctx_next_entity(&ctx, &player_index)) {
@@ -77,6 +78,8 @@ int main(int argc, char *argv[]) {
   ctx_load_level(&ctx, level_test_adj_init);
   ctx_swap_active_level(&ctx);
   ctx_load_level(&ctx, level_test_entry_init);
+
+  gs_set_ztest(2);
 
   // load_textures(&vram);
   draw2d_clear_colour(33, 38, 63);
