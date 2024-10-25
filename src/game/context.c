@@ -43,7 +43,7 @@ int ctx_init(struct gamectx *ctx, struct vram_slice *vram) {
     ctx->levels[i].collision.height = 0;
     ctx->levels[i].vram.start = vram_head;
     ctx->levels[i].vram.head = vram_head;
-    ctx->levels[i].vram.end = vram_head+vram_level_size;
+    ctx->levels[i].vram.end = vram_head + vram_level_size;
     vram_head += vram_level_size;
   }
   return 0;
@@ -95,13 +95,11 @@ int ctx_draw(struct gamectx *ctx) {
     if (ctx->levels[0].draw) {
       ctx->levels[0].draw(ctx, &ctx->levels[0]);
     }
-    // draw_tile_map(&ctx->levels[0].decoration, &ctx->camera);
   }
   if (ctx->levels[1].active) {
     if (ctx->levels[1].draw) {
       ctx->levels[1].draw(ctx, &ctx->levels[1]);
     }
-    // draw_tile_map(&ctx->levels[0].decoration, &ctx->camera);
   }
   
   trace("draw entities");
