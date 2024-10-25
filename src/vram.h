@@ -1,7 +1,8 @@
 #ifndef SRC_VRAM_H
 #define SRC_VRAM_H
 
-#define VRAM_MAX (4*1024*1024)
+// VRAM_MAX = (0x3fff*4) << 6 (max page word addr in TBP0/1 << 6)
+#define VRAM_MAX (0x3fff<<8)
 #define VRAM_INVALID ((unsigned int)-1)
 
 typedef unsigned int vram_addr_t;
