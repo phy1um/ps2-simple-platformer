@@ -6,7 +6,7 @@
 #include "game/camera.h"
 
 #define SCR_WIDTH 640
-#define SCR_HEIGHT 448 
+#define SCR_HEIGHT 224
 
 struct ee_texture {
   void *pixels;
