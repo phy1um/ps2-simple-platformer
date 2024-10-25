@@ -44,14 +44,6 @@ int level_test_load_init(struct gamectx *ctx, struct levelctx *lvl) {
   load_textures(lvl);
   tile_map_init(&lvl->decoration, 80, 28, GRID_SIZE, (30+100)*16, -16, &lvl->allocator);
   tile_map_init(&lvl->collision, 80, 28, GRID_SIZE, (30+100)*16, -16, &lvl->allocator);
-  for(int yy = 0; yy < lvl->decoration.height; yy++) {
-    for(int xx = 0; xx < lvl->decoration.width; xx++) {
-      int r = rand() % 40;
-      if (r < 8) {
-        set_tile(&lvl->decoration, xx, yy, r);
-      }
-    }
-  }
 
   for (int yy = 0; yy < 10; yy++) {
       level_set_wall(lvl, 78, 10+yy);

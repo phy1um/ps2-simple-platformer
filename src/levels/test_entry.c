@@ -23,7 +23,7 @@ static void load_textures(struct levelctx *lvl) {
   ld->tiles.size = tga.pixels_size;
   ld->tiles.width = tga.header.width;
   ld->tiles.height = tga.header.height;
-  ld->tiles.vram_addr = vram_alloc(&lvl->vram, tga.pixels_size, 2048*4)/4;
+  ld->tiles.vram_addr = vram_alloc(&lvl->vram, tga.pixels_size, 2048)/4;
   return;
 }
 
@@ -46,14 +46,6 @@ int level_test_entry_init(struct gamectx *ctx, struct levelctx *lvl) {
 
   tile_map_init(&lvl->decoration, 30, 28, GRID_SIZE, 0, 0, &lvl->allocator);
   tile_map_init(&lvl->collision, 30, 28, GRID_SIZE, 0, 0, &lvl->allocator);
-  for(int yy = 0; yy < lvl->decoration.height; yy++) {
-    for(int xx = 0; xx < lvl->decoration.width; xx++) {
-      int r = rand() % 40;
-      if (r < 8) {
-        set_tile(&lvl->decoration, xx, yy, r);
-      }
-    }
-  }
 
   for (int yy = 0; yy < 10; yy++) {
       level_set_wall(lvl, 3, 10+yy);
