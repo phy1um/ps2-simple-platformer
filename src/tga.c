@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "tga.h"
+#include "io.h"
 #include "alloc.h"
 
 static int swizzle16(uint8_t *buffer, int width, int height) {
@@ -48,11 +49,8 @@ static int swizzle32(uint8_t *buffer, int width, int height) {
 
 
 int tga_from_file(const char *file_name, struct tga_data *out, struct allocator *a) {
-  FILE *f = fopen(file_name, "rb"); 
-  if (!f) {
-    return 1;
-  }
-  size_t bytes_read = fread(&out->header, 1, sizeof(struct tga_header), f);
+  size_t bytes_read = io_read_file_part(file_name, &out->header, sizeof(struct tga_header), 0,
+      sizeof(struct tga_header));
   if (bytes_read != sizeof(struct tga_header)) {
     return 1;
   }
@@ -61,7 +59,8 @@ int tga_from_file(const char *file_name, struct tga_data *out, struct allocator 
   int size = out->header.width*out->header.height*bpp;
   out->pixels_size = size;
   out->pixels = alloc_from(a, size, 1);
-  bytes_read = fread(out->pixels, 1, size, f);
+  bytes_read = io_read_file_part(file_name, out->pixels, size, sizeof(struct tga_header), 
+      size+sizeof(struct tga_header));
   if (bytes_read != size) {
     return 1;
   }

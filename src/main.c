@@ -14,6 +14,7 @@
 
 #include "draw.h"
 #include "tiles.h"
+#include "io.h"
 #include "vram.h"
 #include "game/context.h"
 #include "game/camera.h"
@@ -57,8 +58,12 @@ int main(int argc, char *argv[]) {
   trace("setting screen dimensions: %dx%d", SCR_WIDTH, SCR_HEIGHT);
   draw2d_screen_dimensions(SCR_WIDTH, SCR_HEIGHT);
 
+  if (!io_init_wad("host:assets.wad")) {
+    logerr("load assets");
+    p2g_fatal("no assets to work with");
+    return 1;
+  }
   struct gamectx ctx = {0};
-  //vram_pad(&vram, 0x12000);
 
   size_t player_index = 0;
   if (ctx_next_entity(&ctx, &player_index)) {

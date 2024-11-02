@@ -13,7 +13,7 @@ struct ldata {
 
 static void load_textures(struct levelctx *lvl) {
   struct tga_data tga;
-  int rc = tga_from_file("host:tiles_test0.tga", &tga, &lvl->allocator);
+  int rc = tga_from_file("tiles_test0.tga", &tga, &lvl->allocator);
   if (rc) {
     logerr("failed to load tiles_test0.tga");
     return;
