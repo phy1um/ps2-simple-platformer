@@ -23,6 +23,14 @@ runps2: $(EE_BIN)
 resetps2:
 	ps2client -h $(PS2HOST) -t 5 reset
 
+packwad: bin/makewad.c wad.c
+	gcc -g -o packwad bin/makewad.c wad.c
+
+readwad: bin/readwad.c wad.c
+	gcc -g -o readwad bin/readwad.c wad.c
+
+tools: packwad readwad
+
 
 include $(PS2SDK)/samples/Makefile.eeglobal
 include $(PS2SDK)/samples/Makefile.pref
