@@ -1,6 +1,6 @@
 #include "entity.h"
 #include "context.h"
-#include "levels/levels.h"
+#include "../levels/levels.h"
 
 #include <stdlib.h>
 #include <math.h>
@@ -72,7 +72,6 @@ static int player_update(struct entity *player, struct gamectx *ctx, float dt) {
   if (button_released(BUTTON_X)) {
     pd->has_jump_buffered = 0;
   }
-  
 
   if (fabs(impulse_x) > EPSILON) {
     if (fabs(pd->vx) > EPSILON && (signof(impulse_x) != signof(pd->vx))) {
