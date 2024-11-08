@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <p2g/log.h>
 
 #include "tga.h"
 #include "io.h"
@@ -59,6 +60,10 @@ int tga_from_file(const char *file_name, struct tga_data *out, struct allocator 
   int size = out->header.width*out->header.height*bpp;
   out->pixels_size = size;
   out->pixels = alloc_from(a, size, 1);
+  if (!out->pixels) {
+    logerr("tga pixels alloc (size = %d)", size);
+    return 1;
+  }
   bytes_read = io_read_file_part(file_name, out->pixels, size, sizeof(struct tga_header), 
       size+sizeof(struct tga_header));
   if (bytes_read != size) {
