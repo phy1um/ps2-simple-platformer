@@ -2,7 +2,11 @@
 #define LOG_H
 
 #include <stdio.h>
+#ifdef _EE
 #include <tamtypes.h>
+#else
+typedef struct qword_t qword_t;
+#endif
 
 extern int log_output_level;
 
