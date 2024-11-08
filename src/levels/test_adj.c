@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <p2g/log.h>
-#include <gs_psm.h>
 
 #include "../tga.h"
 #include "../tiles.h"
