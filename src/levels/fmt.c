@@ -19,7 +19,7 @@ struct level_loaded {
   struct ee_texture *textures;
 };
 
-int loaded_draw(struct gamectx *ctx, struct levelctx *lvl);
+static int loaded_draw(struct gamectx *ctx, struct levelctx *lvl);
 int load_assets(
     const char *fname,
     struct level_header *header,
@@ -37,6 +37,10 @@ int load_tga(const char *fname, struct levelctx *lvl, struct ee_texture *tgt);
 int level_load(const char *fname, struct gamectx *ctx, struct levelctx *lvl) {
   // read header and defs
   struct level_loaded *loaded = alloc_from(&lvl->allocator, 1, sizeof(struct level_loaded));
+  if (!loaded) {
+    logerr("alloc loaded level struct");
+    return 1;
+  }
   struct level_header header = {0};
   size_t rc = io_read_file_part(fname, &header, sizeof(struct level_header), 0, sizeof(struct level_header));
   if (!rc) {
@@ -50,27 +54,44 @@ int level_load(const char *fname, struct gamectx *ctx, struct levelctx *lvl) {
     return 1;
   }
   size_t read_head = sizeof(struct level_header);
+  logdbg("read tilemap defs @ %X [+ %X]", read_head,
+      header.tilemap_def_count * sizeof(struct level_tilemap_def));
   rc = io_read_file_part(fname, tilemap_defs, 
       header.tilemap_def_count * sizeof(struct level_tilemap_def),
       read_head, 
-      header.tilemap_def_count * sizeof(struct level_tilemap_def));
+      read_head + header.tilemap_def_count * sizeof(struct level_tilemap_def));
   if (!rc) {
     logerr("read tilemap defs: %s", fname);
     return 1;
   }
   read_head += header.tilemap_def_count * sizeof(struct level_tilemap_def);
+
   struct asset_def *asset_defs = alloc_from(&lvl->allocator,
       header.asset_def_count, sizeof(struct asset_def));
+  if (!asset_defs) {
+    logerr("alloc asset definitions: %s", fname);
+    return 1;
+  }
+  logdbg("read asset defs @ %X [+ %X]", read_head,
+      header.asset_def_count * sizeof(struct asset_def));
   rc = io_read_file_part(fname, asset_defs, 
       header.asset_def_count * sizeof(struct asset_def),
       read_head, 
-      header.asset_def_count * sizeof(struct asset_def));
+      read_head + header.asset_def_count * sizeof(struct asset_def));
   if (!rc) {
     logerr("read assetmap defs: %s", fname);
     return 1;
   }
   loaded->textures = alloc_from(&lvl->allocator, header.asset_def_count, sizeof(struct ee_texture));
+  if (!loaded->textures) {
+    logerr("alloc loaded textures: %s", fname);
+    return 1;
+  }
   loaded->maps = alloc_from(&lvl->allocator, header.tilemap_def_count, sizeof(struct tile_map));
+  if (!loaded->maps) {
+    logerr("alloc loaded tilemaps: %s", fname);
+    return 1;
+  }
   if (load_assets(fname, &header, asset_defs, loaded, lvl)) {
     logerr("load level assets: %s", fname);
     return 1;
@@ -86,10 +107,12 @@ int level_load(const char *fname, struct gamectx *ctx, struct levelctx *lvl) {
   lvl->update = 0;
   lvl->cleanup = 0;
   lvl->draw = loaded_draw;
+  lvl->active = 1;
+  logdbg("finished loading level: %s", header.short_name);
   return 0;
 }
 
-int loaded_draw(struct gamectx *ctx, struct levelctx *lvl) {
+static int loaded_draw(struct gamectx *ctx, struct levelctx *lvl) {
   struct level_loaded *loaded = (struct level_loaded *)lvl->leveldata;
   if (!loaded) {
     logerr("leveldata null");
@@ -109,16 +132,25 @@ int load_assets(
     struct levelctx *lvl
 ) {
   for (int i = 0; i < header->asset_def_count; i++) {
-      struct asset_def *a = &asset_defs[i]; 
+      struct asset_def *a = &asset_defs[i];
+      logdbg("loading asset (%d): kind=%d, name offset=%d, name len=%d", i,
+          a->asset_kind, a->file_offset_name, a->name_len);
       char *name = alloc_from(&lvl->allocator, 1, a->name_len + 1); 
-      int rc = io_read_file_part(fname, name, a->name_len, a->file_offset_name, a->name_len);
+      if (!name) {
+        logerr("failed to allocate name buffer");
+        return 1;
+      }
+      int rc = io_read_file_part(fname, name, a->name_len, a->file_offset_name, a->file_offset_name + a->name_len);
       name[a->name_len] = 0;
       if (!rc) {
         logerr("load level %s: asset %i read name @ %ld (len=%ld)", fname, i,
             a->file_offset_name, a->name_len);
         return 1;
       }
-      load_tga(name, lvl, &loaded->textures[i]);
+      if (load_tga(name, lvl, &loaded->textures[i])) {
+        logerr("load tga: %s @ slot %d", name, i);
+        return 1;
+      }
   }
   return 0;
 }
@@ -147,7 +179,7 @@ int load_level_maps(
     if (!tgt) {
       continue;
     }
-    if (t->asset_ref != UINT16_MAX) {
+    if (t->asset_ref != UINT32_MAX) {
       if (t->asset_ref > header->asset_def_count) {
         logerr("load level %s: map %d references asset %ld (/%d)", fname, 
             i, t->asset_ref, header->asset_def_count);
