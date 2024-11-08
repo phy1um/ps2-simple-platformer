@@ -1,7 +1,6 @@
 #include <stdlib.h>
 
 #include <p2g/log.h>
-#include <p2g/ps2draw.h>
 #include "context.h"
 #include "entity.h"
 #include "../tiles.h"
@@ -91,7 +90,6 @@ int ctx_is_free_box(struct gamectx *ctx, float x, float y, float w, float h) {
 
 int ctx_draw(struct gamectx *ctx) {
   trace("draw tilemaps");
-  draw2d_set_colour(0x80, 0x80, 0x80, 0x80);
   if (ctx->levels[0].active) {
     if (ctx->levels[0].draw) {
       ctx->levels[0].draw(ctx, &ctx->levels[0]);
