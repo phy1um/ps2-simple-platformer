@@ -1,5 +1,5 @@
 
-SRC_FILES=$(shell find . -type f -name '*.c' -not -path './test/*' -not -path './sim/*')
+SRC_FILES=$(shell find . -type f -name '*.c' -not -path './test/*' -not -path './sim/*' -not -path './tools/*')
 EE_OBJS=$(patsubst %.c,%.o,$(SRC_FILES))
 EE_BIN=game.elf
 EE_INCS+=-I./include
@@ -23,13 +23,13 @@ runps2: $(EE_BIN)
 resetps2:
 	ps2client -h $(PS2HOST) -t 5 reset
 
-packwad: bin/makewad.c wad.c
-	gcc -g -o packwad bin/makewad.c wad.c
+tools/packwad: tools/makewad.c wad.c
+	gcc $(EE_CFLAGS) $(EE_INCS) -g -o $@ $^
 
-readwad: bin/readwad.c wad.c
-	gcc -g -o readwad bin/readwad.c wad.c
+tools/readwad: tools/readwad.c wad.c
+	gcc $(EE_CFLAGS) $(EE_INCS) -g -o $@ $^
 
-tools: packwad readwad
+tools: tools/packwad tools/readwad
 
 
 ifeq ($(platform), PC)

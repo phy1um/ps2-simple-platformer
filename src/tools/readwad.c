@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include "../wad.h"
 
+int log_output_level = 0;
+
 int read_index(const char *wad_file) {
   struct wad_file wad = {0};
   if(!wad_open(wad_file, &wad)) {

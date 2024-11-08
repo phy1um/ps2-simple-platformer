@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include "../wad.h"
 
+int log_output_level = 0;
+
 // ./packwad file1.tga file2.txt file3.foo
 int main(int argc, char *argv[]) {
   int file_count = argc-1;
