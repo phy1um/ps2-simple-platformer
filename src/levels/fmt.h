@@ -14,25 +14,25 @@ enum tilemap_kind {
   MAP_DECO,
 };
 
-struct level_header {
+struct __attribute__((packed)) level_header {
   char id[4];
   uint16_t version;
   uint16_t tilemap_def_count;
   uint16_t asset_def_count;
   uint16_t entity_def_count;
-  uint32_t world_offset[2];
+  int32_t world_offset[2];
   char short_name[NAME_LEN];
 };
 
-struct level_tilemap_def {
-  uint32_t local_offset[2];
+struct __attribute__((packed)) level_tilemap_def {
+  int32_t local_offset[2];
   uint32_t size[2];
   uint16_t tilemap_kind;
   uint32_t asset_ref;
   uint32_t map_file_offset;
 };
 
-struct asset_def {
+struct __attribute__((packed)) asset_def {
   uint16_t asset_kind;
   uint32_t file_offset_name;
   uint32_t name_len;
