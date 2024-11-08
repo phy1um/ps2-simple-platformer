@@ -25,7 +25,7 @@
 int main(int argc, char *argv[]) {
   srand(time(NULL));
   log_output_level = LOG_LEVEL_DEBUG;
-  logdbg("startup\n");
+  logdbg("startup");
 
   pad_init();
 
@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
   logdbg("vram head after framebuffer allocations: %X (%X words)", vram.head, vram.head/4);
 
   trace("using framebuffers");
-  gs_set_fields(SCR_WIDTH, SCR_HEIGHT, GS_PSM_32, GS_PSMZ_16, fb1/4, fb2/4, zbuf/4);
+  gs_set_fields(SCR_WIDTH, SCR_HEIGHT, GS_PSM_32, GS_PSMZ_16S, fb1/4, fb2/4, zbuf/4);
 
   void *draw_buffer_ptr = calloc(1, 200*1024);
   draw_bind_buffer(draw_buffer_ptr, 200*1024);
@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
   trace("setting screen dimensions: %dx%d", SCR_WIDTH, SCR_HEIGHT);
   draw2d_screen_dimensions(SCR_WIDTH, SCR_HEIGHT);
 
-  if (!io_init_wad("host:assets.wad")) {
+  if (!io_init_wad("./assets.wad")) {
     logerr("load assets");
     p2g_fatal("no assets to work with");
     return 1;
@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
   }
   struct entity *player = &(ctx.entities[player_index]);
 
-  player_new(player, 130., 200.);
+  player_new(player, 1210., 200.);
 
   float cam_bounds[] = {640., 448.};
   float cam_fbox[] = {50., 50.};
