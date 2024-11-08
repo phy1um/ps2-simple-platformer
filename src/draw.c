@@ -45,6 +45,7 @@ void draw_tile_map(struct tile_map *tm, float tile_square, struct ee_texture *te
         tm->width*GRID_SIZE, tm->height*GRID_SIZE)) {
     return;
   }
+  draw2d_set_colour(0x80, 0x80, 0x80, 0x80);
   for(int y = 0; y < tm->height; y++) {
     for(int x = 0; x < tm->width; x++) {
       unsigned char t = get_tile(tm, x, y);
