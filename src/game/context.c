@@ -4,7 +4,7 @@
 #include <p2g/ps2draw.h>
 #include "context.h"
 #include "entity.h"
-#include "tiles.h"
+#include "../tiles.h"
 #include "../draw.h"
 
 #define LEVEL_MAX 2
@@ -14,7 +14,7 @@ void *level_alloc(struct levelctx *lvl, size_t num, size_t size) {
   size_t total = num*size;
   trace("level bump allocator: head=%zu size=%zu ptr=%p", lvl->heap_head, total, lvl->heap);
   if (lvl->heap_head + total > lvl->heap_size) {
-    logerr("level heap overflow");
+    logerr("level heap overflow: %zu x %zu", num, size);
     return 0;
   }
   void *out = lvl->heap + lvl->heap_head;
@@ -45,6 +45,7 @@ int ctx_init(struct gamectx *ctx, struct vram_slice *vram) {
     ctx->levels[i].vram.head = vram_head;
     ctx->levels[i].vram.end = vram_head + vram_level_size;
     vram_head += vram_level_size;
+    logdbg("init level slot %d: heap @ %X, size = %d", i, ctx->levels[i].heap, LEVEL_HEAP_SIZE);
   }
   return 0;
 }
