@@ -11,6 +11,9 @@
 
 void *level_alloc(struct levelctx *lvl, size_t num, size_t size) {
   size_t total = num*size;
+  while (lvl->heap_head % 4 != 0) {
+    lvl->heap_head += 1;
+  }
   trace("level bump allocator: head=%zu size=%zu ptr=%p", lvl->heap_head, total, lvl->heap);
   if (lvl->heap_head + total > lvl->heap_size) {
     logerr("level heap overflow: %zu x %zu", num, size);
