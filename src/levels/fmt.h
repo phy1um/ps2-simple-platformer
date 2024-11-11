@@ -20,6 +20,7 @@ struct __attribute__((packed)) level_header {
   uint16_t tilemap_def_count;
   uint16_t asset_def_count;
   uint16_t entity_def_count;
+  uint16_t area_def_count;
   int32_t world_offset[2];
   char short_name[NAME_LEN];
 };
@@ -36,6 +37,14 @@ struct __attribute__((packed)) asset_def {
   uint16_t asset_kind;
   uint32_t file_offset_name;
   uint32_t name_len;
+};
+
+struct __attribute__((packed)) level_area_def {
+  int32_t local_offset[2];
+  uint32_t bounds[2];
+  uint32_t kind;
+  uint32_t arg_file_offset;
+  uint32_t arg_len;
 };
 
 int level_load(const char *fname, struct gamectx *ctx, struct levelctx *lvl);
