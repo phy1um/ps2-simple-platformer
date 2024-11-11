@@ -23,6 +23,11 @@ int draw_bind_texture(struct ee_texture *t) {
 int draw_upload_ee_texture(struct ee_texture *t) {
   return 0;
 }
+int draw2d_set_colour(unsigned char r, unsigned char g, unsigned char b,
+    unsigned char a) {return 0;}
+int draw2d_rect(float x1, float y1, float w, float h) {return 0;}
+
+
 
 int log_output_level = LOG_LEVEL_DEBUG;
 
@@ -41,11 +46,6 @@ int main(int argc, char *argv[]) {
   struct gamectx ctx = {0};
 
   ctx_init(&ctx, &vram);
-  ctx_load_level(&ctx, level_test_adj_init);
-  ctx_swap_active_level(&ctx);
-  ctx_load_level(&ctx, level_test_entry_init);
-  ctx_load_level(&ctx, level_test_load_init);
-  ctx_load_level(&ctx, level_test_entry_init);
   ctx_load_level(&ctx, level_test_load_init);
 
   return 0;
