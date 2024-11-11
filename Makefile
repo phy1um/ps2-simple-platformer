@@ -6,10 +6,10 @@ tools:
 	cp src/tools/readwad tools/readwad
 	cp src/tools/packwad tools/packwad
 
-assets/%.ps2lvl: assets/%.json
-	python assets/compile_level.py $< > $@
-
 .PHONY: wad
-wad: assets/test.ps2lvl
+wad: levels
 	./tools/packwad assets/*.tga assets/*.ps2lvl > src/assets.wad
 
+.PHONY: levels
+levels: 
+	python assets/compile_ldtk.py game_world.ldtk
