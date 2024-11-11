@@ -73,16 +73,15 @@ int main(int argc, char *argv[]) {
   }
   struct entity *player = &(ctx.entities[player_index]);
 
-  player_new(player, 1210., 200.);
+  player_new(player, 200., 200.);
 
   float cam_bounds[] = {640., 448.};
   float cam_fbox[] = {50., 50.};
   camera_init(&ctx.camera, cam_bounds, cam_fbox);
 
   ctx_init(&ctx, &vram);
-  ctx_load_level(&ctx, level_test_adj_init);
+  ctx_load_level(&ctx, level_test_load_init);
   ctx_swap_active_level(&ctx);
-  ctx_load_level(&ctx, level_test_entry_init);
 
   gs_set_ztest(2);
 
