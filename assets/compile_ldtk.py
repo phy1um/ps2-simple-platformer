@@ -9,15 +9,34 @@ VERSION = 0
 NAME_LEN = 24
 TILE_DEF_SIZE = 26
 ASSET_DEF_SIZE = 10
+AREA_DEF_SIZE = 24
 
-def encode_kind(i):
+def encode_tilemap_kind(i):
     if i == "collision":
         return 0
     elif i == "deco":
         return 1
     else:
         raise Exception(f"invalid tilemap kind: {i}")
+
+def encode_area_event_kind(i):
+    if i == "load_level":
+        return 1
+    else:
+        raise Exception(f"invalid trigger area kind: {i}")
         
+class Area(object):
+    @staticmethod
+    def from_ldtk(o):
+        (x, y) = o.get_offset()
+        (w, h) = o.get_dimensions() 
+        event_kind = encode_area_event_kind(o.get_field("event_type"))
+        return Area(x, y, w, h, event_kind, o.get_field("arg"))
+
+    def __init__(self, x, y, w, h, kind, arg):
+        self.bounds = (x, y, w, h)
+        self.kind = kind
+        self.arg = arg
 
 class Map(object):
     @staticmethod
@@ -103,6 +122,8 @@ class Level(object):
             as_tga = asset.replace(".png", ".tga")
             print(f"replaced texture name: {as_tga}")
             level.add_texture_asset(as_tga)
+        for area in o.trigger_areas():
+            level.add_area(Area.from_ldtk(area))
         for m in o.tile_layers():
             level.add_map(Map.from_ldtk(m))
         return level
@@ -112,6 +133,7 @@ class Level(object):
         self.offset = (ox, oy)
         self.assets = []
         self.maps = []
+        self.areas = []
 
     def add_texture_asset(self, a):
         self.assets.append(a)
@@ -119,13 +141,17 @@ class Level(object):
     def add_map(self, m):
         self.maps.append(m)
 
+    def add_area(self, a):
+        self.areas.append(a)
+
     def _serialize_header(self):
-        return struct.pack(f"<4s4H2i{NAME_LEN}s",
+        return struct.pack(f"<4s5H2i{NAME_LEN}s",
                          FMT_ID,
                          VERSION,
                          len(self.maps),
                          len(self.assets),
                          0,
+                         len(self.areas),
                          self.offset[0],
                          self.offset[1],
                          bytes(self.name, "ascii"),
@@ -138,7 +164,7 @@ class Level(object):
             map_offset = dc.alloc(key, m.dimensions[0]*m.dimensions[1])
             bs.append(struct.pack("<2i2IHiI", m.offset[0], m.offset[1],
                                m.dimensions[0], m.dimensions[1],
-                               encode_kind(m.kind), m.texture, map_offset))
+                               encode_tilemap_kind(m.kind), m.texture, map_offset))
             dc.write_to(key, bytes(m.map))
         return b"".join(bs)
 
@@ -151,12 +177,29 @@ class Level(object):
             dc.write_to(key, bytes(a, "ascii"))
         return b"".join(bs)
 
+    def _serialize_area_definitions(self, dc):
+        bs = []
+        for i,a in enumerate(self.areas):
+            key = f"AREA:{i}"
+            arg_offset = dc.alloc(key, len(a.arg))
+            print(f"arg len {a.arg} = {len(a.arg)}")
+            bs.append(struct.pack("<ii5I", *a.bounds, a.kind, arg_offset, len(a.arg)))
+            dc.write_to(key, bytes(a.arg, "ascii"))
+
+        return b"".join(bs)
+
     def write_to_buffer(self, to):
         header_bytes = self._serialize_header()
-        data_chunk = DataChunk(len(header_bytes) + len(self.maps)*TILE_DEF_SIZE + len(self.assets)*ASSET_DEF_SIZE)
+        data_chunk = DataChunk(
+                len(header_bytes) 
+                + len(self.maps)*TILE_DEF_SIZE 
+                + len(self.assets)*ASSET_DEF_SIZE
+                + len(self.areas)*AREA_DEF_SIZE
+                + 4)
         to.write(header_bytes)
         to.write(self._serialize_tilemap_definitions(data_chunk))
         to.write(self._serialize_asset_definitions(data_chunk))
+        to.write(self._serialize_area_definitions(data_chunk))
         to.write(data_chunk.to_blob())
 
 if __name__ == "__main__":

@@ -33,9 +33,29 @@ class _LDTKLayerBase(_LDTKBase):
     def get_kind(self):
         return "unknown"
 
-class LDTKCollisionLayer(_LDTKBase):
+class LDTKEntity(_LDTKBase):
     def __init__(self, o):
         super().__init__(o)
+
+    def get_dimensions(self):
+        return (self._dict["width"], self._dict["height"])
+
+    def get_offset(self):
+        [x, y] = self._dict["px"]
+        return (x, y)
+
+    def get_field(self, name):
+        for field in self._dict["fieldInstances"]:
+            if field["__identifier"] == name:
+                return field["__value"]
+        raise Exception(f"no such field: {name}")
+
+class LDTKEntityLayer(_LDTKLayerBase):
+    def __init__(self, o):
+        super().__init__(o)
+
+    def entities(self):
+        return self._dict["entityInstances"]
 
 class LDTKTileLayer(_LDTKLayerBase):
     def __init__(self, o):
@@ -75,8 +95,8 @@ class LDTKIntGridLayer(_LDTKLayerBase):
         (w, h) = self.get_dimensions()
         out = [0]*(w*h)
         for i, v in enumerate(self._dict["intGridCsv"]):
-            if v != 0:
-                print(f"set map [collision]: {i} = {v}")
+            # if v != 0:
+                # print(f"set map [collision]: {i} = {v}")
             out[i] = v
         return out
 
@@ -95,6 +115,13 @@ class LDTKLevel(_LDTKBase):
             if layer.get_kind() == "deco":
                 yield layer.get_tileset()
         # TODO: iterate over entities too
+
+    def trigger_areas(self):
+        for layer in self.entity_layers():
+            for eo in layer.entities():
+                entity = LDTKEntity(eo)
+                if entity.get_name().lower() == "trigger_zone":
+                    yield entity
 
     def tile_layers(self):
         for layer in self._dict["layerInstances"]:
