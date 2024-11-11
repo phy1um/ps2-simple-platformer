@@ -7,7 +7,7 @@
 #include "../game/context.h"
 
 int level_test_load_init(struct gamectx *ctx, struct levelctx *lvl) {
-  if (level_load("test.ps2lvl", ctx, lvl)) {
+  if (level_load("assets/entry_01.ps2lvl", ctx, lvl)) {
     logerr("load fail");    
     return 1;
   }

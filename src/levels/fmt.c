@@ -192,6 +192,7 @@ int load_level_maps(
         header->world_offset[1]+t->local_offset[1], 
         &lvl->allocator);
     uint32_t map_size = t->size[0]*t->size[1];
+    logdbg("reading tilemap (%d) @ %d for %d", kind, t->map_file_offset, map_size);
     io_read_file_part(fname, tgt->tiles, map_size, t->map_file_offset, 
         t->map_file_offset + map_size);
   }

@@ -11,5 +11,5 @@ assets/%.ps2lvl: assets/%.json
 
 .PHONY: wad
 wad: assets/test.ps2lvl
-	cd assets && ../tools/packwad *.tga *.ps2lvl > ../src/assets.wad
+	./tools/packwad assets/*.tga assets/*.ps2lvl > src/assets.wad
 
