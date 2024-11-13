@@ -51,6 +51,10 @@ void draw_tile_map(struct tile_map *tm, float tile_square, struct ee_texture *te
     logerr("cannot draw NULL tile map");
     return;
   }
+  if (!tm->tiles) {
+    logerr("cannot draw NULL tile map data");
+    return;
+  }
   if (!camera_contains_area(cam, tm->world_offset_x, tm->world_offset_y, 
         tm->width*GRID_SIZE, tm->height*GRID_SIZE)) {
     return;

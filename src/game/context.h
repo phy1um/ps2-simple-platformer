@@ -16,15 +16,15 @@ typedef int(*level_init_fn)(struct gamectx *, struct levelctx *, const char *arg
 typedef int(*level_update_fn)(struct gamectx *, struct levelctx *, float dt);
 typedef int(*level_cleanup_fn)(struct gamectx *, struct levelctx *);
 typedef int(*level_draw_fn)(struct gamectx *, struct levelctx *);
+typedef int(*level_test_point_fn)(struct levelctx *, float x, float y);
 
 struct levelctx {
   int active;
-  struct tile_map decoration;
-  struct tile_map collision;
   float bounds[4];
   level_update_fn update;
   level_cleanup_fn cleanup;
   level_draw_fn draw;
+  level_test_point_fn test_point;
   void *heap;
   size_t heap_head;
   size_t heap_size;

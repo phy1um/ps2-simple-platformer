@@ -19,6 +19,12 @@ struct loaded_deco {
   uint16_t texture_region[4];
 };
 
+struct loaded_tile_map {
+  enum tilemap_kind kind;
+  uint32_t texture_index;
+  struct tile_map tiles;
+};
+
 struct level_loaded {
   char short_name[NAME_LEN]; 
   uint16_t tilemap_count;
@@ -26,7 +32,7 @@ struct level_loaded {
   uint16_t area_count;
   uint16_t deco_count;
   int deco_map_tex_ref;
-  struct tile_map *maps;
+  struct loaded_tile_map *maps;
   struct ee_texture *textures;
   struct trigger_area *areas;
   struct loaded_deco *decos;
@@ -54,6 +60,7 @@ static int map_biggest_dims(struct level_tilemap_def *ld, size_t count, int *w, 
 
 static int loaded_draw(struct gamectx *ctx, struct levelctx *lvl);
 static int loaded_update(struct gamectx *ctx, struct levelctx *lvl, float dt);
+static int loaded_test_point(struct levelctx *lvl, float x, float y);
 
 int load_tga(const char *fname, struct levelctx *lvl, struct ee_texture *tgt);
 
@@ -104,6 +111,11 @@ int load_assets(
     struct level_loaded *loaded,
     struct levelctx *lvl
 ) {
+  loaded->textures = alloc_from(&lvl->allocator, header->asset_def_count, sizeof(struct ee_texture));
+  if (!loaded->textures) {
+    logerr("alloc loaded textures: %s", fname);
+    return 1;
+  }
   for (int i = 0; i < header->asset_def_count; i++) {
       struct asset_def *a = &asset_defs[i];
       logdbg("loading asset (%d): kind=%d, name offset=%lu, name len=%lu", i,
@@ -157,48 +169,32 @@ int load_level_maps(
     struct level_tilemap_def *tilemap_defs, 
     struct levelctx *lvl
 ) {
-  loaded->textures = alloc_from(&lvl->allocator, header->asset_def_count, sizeof(struct ee_texture));
-  if (!loaded->textures) {
-    logerr("alloc loaded textures: %s", fname);
+  loaded->maps = alloc_from(&lvl->allocator, header->tilemap_def_count, sizeof(struct loaded_tile_map));
+  if (!loaded->maps) {
+    logerr("alloc loaded tilemaps: %s", fname);
     return 1;
   }
-  int has_deco = 0;
-  int has_col = 0;
   for (int i = 0; i < header->tilemap_def_count; i++) {
     struct level_tilemap_def *t = &tilemap_defs[i];
-    struct tile_map *tgt = 0;
+    struct loaded_tile_map *tgt = &loaded->maps[i];
     enum tilemap_kind kind = (enum tilemap_kind) t->tilemap_kind;
-    if (kind == MAP_DECO && !has_deco) {
-      tgt = &lvl->decoration; 
-      has_deco = 1;
-    }
-    if (kind == MAP_COLLISION && !has_col) {
-      tgt = &lvl->collision; 
-      has_col = 1;
-    }
-    if (!tgt) {
-      continue;
-    }
+    tgt->kind = kind;
     if (t->asset_ref != UINT32_MAX) {
       if (t->asset_ref > header->asset_def_count) {
         logerr("load level %s: map %d references asset %ld (/%d)", fname, 
             i, t->asset_ref, header->asset_def_count);
         return 1;
       }
-      loaded->deco_map_tex_ref = t->asset_ref;
+      tgt->texture_index = t->asset_ref;
     }
-    tile_map_init(tgt, t->size[0], t->size[1], GRID_SIZE, 
+    tile_map_init(&tgt->tiles, t->size[0], t->size[1], GRID_SIZE, 
         header->world_offset[0]+t->local_offset[0], 
         header->world_offset[1]+t->local_offset[1], 
         &lvl->allocator);
     uint32_t map_size = t->size[0]*t->size[1];
-    logdbg("reading tilemap (%d) @ %lu for %lu", kind, t->map_file_offset, map_size);
-    io_read_file_part(fname, tgt->tiles, map_size, t->map_file_offset, 
+    logdbg("reading tilemap (%d) @ %lu for %lu into -> %p", kind, t->map_file_offset, map_size, tgt->tiles.tiles);
+    io_read_file_part(fname, tgt->tiles.tiles, map_size, t->map_file_offset, 
         t->map_file_offset + map_size);
-  }
-  if (!has_deco || !has_col) {
-    logerr("must have at least 1 collision and 1 decoration map: %s", fname);
-    return 1;
   }
   return 0;
 }
@@ -313,13 +309,6 @@ int fmt_load_level(struct gamectx *ctx, struct levelctx *lvl, const char *fname)
 
   // =====================
   // read + init data
-  /* TODO
-  loaded->maps = alloc_from(&lvl->allocator, header.tilemap_def_count, sizeof(struct tile_map));
-  if (!loaded->maps) {
-    logerr("alloc loaded tilemaps: %s", fname);
-    return 1;
-  }
-  */
   if (load_assets(fname, &header, asset_defs, loaded, lvl)) {
     logerr("load level assets: %s", fname);
     return 1;
@@ -350,6 +339,7 @@ int fmt_load_level(struct gamectx *ctx, struct levelctx *lvl, const char *fname)
   strcpy(lvl->loaded_name, fname);
   lvl->leveldata = loaded;
   lvl->update = loaded_update;
+  lvl->test_point = loaded_test_point;
   lvl->cleanup = 0;
   lvl->draw = loaded_draw;
   lvl->active = 1;
@@ -366,7 +356,7 @@ int fmt_load_level(struct gamectx *ctx, struct levelctx *lvl, const char *fname)
       lvl->bounds[1],
       lvl->bounds[2],
       lvl->bounds[3]);
-  logdbg("finished loading level: %s", header.short_name);
+  logdbg("finished loading level: %s (# maps = %d)", header.short_name, header.tilemap_def_count);
   return 0;
 }
 
@@ -382,6 +372,24 @@ static int loaded_update(struct gamectx *ctx, struct levelctx *lvl, float dt) {
   return 0;
 }
 
+static int loaded_test_point(struct levelctx *lvl, float x, float y) {
+  struct level_loaded *loaded = (struct level_loaded *)lvl->leveldata;
+  if (!loaded) {
+    logerr("leveldata null");
+  }
+  for (int i = 0; i < loaded->tilemap_count; i++) {
+    struct loaded_tile_map *tm = &loaded->maps[i]; 
+    if (tm->kind != MAP_COLLISION) {
+      continue; 
+    }
+    char hit = get_tile_world(&tm->tiles, x, y);
+    if (hit != 0 && hit != TILE_INVALID) {
+      return hit;
+    }
+  }
+  return 0;
+}
+
 static int loaded_draw(struct gamectx *ctx, struct levelctx *lvl) {
   struct level_loaded *loaded = (struct level_loaded *)lvl->leveldata;
   if (!loaded) {
@@ -391,9 +399,23 @@ static int loaded_draw(struct gamectx *ctx, struct levelctx *lvl) {
     struct ee_texture *tex = &loaded->textures[i];
     draw_upload_ee_texture(tex);
   }
-  struct ee_texture *tex = &loaded->textures[loaded->deco_map_tex_ref];
-  draw_bind_texture(tex);
-  draw_tile_map(&lvl->decoration, 16, tex, &ctx->camera);
+  for (int i = 0; i < loaded->tilemap_count; i++) {
+    struct loaded_tile_map *tm = &loaded->maps[i]; 
+    if (tm->kind != MAP_DECO) {
+      continue; 
+    }
+    if (tm->texture_index == UINT32_MAX) {
+      logerr("draw tilemap %d: invalid texture", i);
+      continue; 
+    }
+    if (tm->texture_index >= loaded->texture_count) {
+      logerr("draw tilemap %d: texture oob (%lu/%lu)", i, tm->texture_index, loaded->texture_count);
+      continue;
+    }
+    struct ee_texture *tex = &loaded->textures[tm->texture_index];
+    draw_bind_texture(tex);
+    draw_tile_map(&tm->tiles, GRID_SIZE, tex, &ctx->camera);
+  }
   for (int i = 0; i < loaded->deco_count; i++) {
     struct loaded_deco *d = &loaded->decos[i];
     if (d->texture_index == UINT32_MAX) {

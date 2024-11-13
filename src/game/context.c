@@ -51,8 +51,6 @@ int ctx_init(struct gamectx *ctx, struct vram_slice *vram) {
     ctx->levels[i].heap_size = LEVEL_HEAP_SIZE;
     ctx->levels[i].allocator.state = &ctx->levels[i];
     ctx->levels[i].allocator.alloc = (alloc_fn) level_alloc;
-    ctx->levels[i].collision.width = 0;
-    ctx->levels[i].collision.height = 0;
     ctx->levels[i].vram.start = vram_head;
     ctx->levels[i].vram.head = vram_head;
     ctx->levels[i].vram.end = vram_head + vram_level_size;
@@ -89,9 +87,16 @@ int ctx_free_entity(struct gamectx *ctx, size_t index) {
 }
 
 int ctx_is_free_point(struct gamectx *ctx, float x, float y) {
-  char t0 = get_tile_world(&ctx->levels[0].collision, x, y);
-  char t1 = get_tile_world(&ctx->levels[1].collision, x, y);
-  return (t0 == 0 || t0 == TILE_INVALID) && (t1 == 0 || t1 == TILE_INVALID);
+  for (int i = 0; i < LEVEL_MAX; i++) {
+    if (!ctx->levels[i].test_point) {
+      continue;
+    }
+    int hit = ctx->levels[i].test_point(&ctx->levels[i], x, y);
+    if (hit) {
+      return 0;
+    }
+  }
+  return 1;
 }
 
 int ctx_is_free_box(struct gamectx *ctx, float x, float y, float w, float h) {
@@ -177,12 +182,14 @@ int ctx_free_level(struct gamectx *ctx) {
   unsigned int tgt_index = (ctx->active_level + 1) % LEVEL_MAX;
   struct levelctx *x = &ctx->levels[tgt_index];
   x->active = 0;
+  x->draw = 0;
+  x->update = 0;
+  x->test_point = 0;
   if (x->cleanup) {
     x->cleanup(ctx, x);
+    x->cleanup = 0;
   }
   x->heap_head = 0;
-  x->collision.width = 0;
-  x->collision.height = 0;
   vram_slice_reset_head(&x->vram);
   return 0;
 }
