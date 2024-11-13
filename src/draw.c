@@ -40,6 +40,12 @@ int put_tile(struct ee_texture *t, float tile_square, float x, float y, float w,
   return draw2d_sprite(x,y,w,h,u0,v0, u0+uxo, v0+vyo);
 }
 
+int put_sprite(struct ee_texture *tex, float x, float y, float w, float h, float u0, float v0,
+    float u1, float v1)
+{
+  return draw2d_sprite(x,y,w,h,u0,v0,u1,v1);
+}
+
 void draw_tile_map(struct tile_map *tm, float tile_square, struct ee_texture *tex, struct game_camera *cam) {
   if (!tm) {
     logerr("cannot draw NULL tile map");
