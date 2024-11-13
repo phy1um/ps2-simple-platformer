@@ -55,7 +55,7 @@ class Map(object):
         m = Map(
                 ox,
                 oy,
-                o.get_name(),
+                o.get_kind(),
                 tiles_w,
                 tiles_h,
                 0)
@@ -135,7 +135,8 @@ class Level(object):
         for area in o.trigger_areas():
             level.add_area(Area.from_ldtk(area))
         for m in o.tile_layers():
-            level.add_map(Map.from_ldtk(m))
+            if not m.is_empty():
+                level.add_map(Map.from_ldtk(m))
         for d in o.deco_entities():
             level.add_decoration(d)
             tile = d.get_tile()

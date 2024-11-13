@@ -33,6 +33,15 @@ class _LDTKLayerBase(_LDTKBase):
     def get_kind(self):
         return "unknown"
 
+    def is_empty(self):
+        if "intGridCsv" in self._dict:
+            if len(self._dict["intGridCsv"]) > 0:
+                return False
+        if "gridTiles" in self._dict:
+            if len(self._dict["gridTiles"]) > 0:
+                return False
+        return True
+
 class LDTKTileset(_LDTKBase):
     def __init__(self, o):
         super().__init__(o)
@@ -128,7 +137,7 @@ class LDTKLevel(_LDTKBase):
 
     def textures(self):
         for layer in self.tile_layers():
-            if layer.get_kind() == "deco":
+            if layer.get_kind() == "deco" and not layer.is_empty():
                 yield layer.get_tileset()
         # TODO: iterate over entities too
 
