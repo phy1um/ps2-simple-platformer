@@ -21,6 +21,7 @@ struct __attribute__((packed)) level_header {
   uint16_t asset_def_count;
   uint16_t entity_def_count;
   uint16_t area_def_count;
+  uint16_t deco_def_count;
   int32_t world_offset[2];
   char short_name[NAME_LEN];
 };
@@ -45,6 +46,13 @@ struct __attribute__((packed)) level_area_def {
   uint32_t kind;
   uint32_t arg_file_offset;
   uint32_t arg_len;
+};
+
+struct __attribute__((packed)) level_deco_def {
+  int32_t local_offset[2];
+  uint32_t bounds[2];
+  uint32_t asset_ref;
+  uint16_t uvs[4];
 };
 
 int fmt_load_level(struct gamectx *ctx, struct levelctx *lvl, const char *);
