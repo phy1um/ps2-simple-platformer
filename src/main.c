@@ -21,6 +21,7 @@
 #include "game/player.h"
 
 #include "levels/levels.h"
+#include "levels/fmt.h"
 
 int main(int argc, char *argv[]) {
   srand(time(NULL));
@@ -80,7 +81,7 @@ int main(int argc, char *argv[]) {
   camera_init(&ctx.camera, cam_bounds, cam_fbox);
 
   ctx_init(&ctx, &vram);
-  ctx_load_level(&ctx, level_test_load_init);
+  ctx_load_level(&ctx, fmt_load_level, "assets/entry_01.ps2lvl");
   ctx_swap_active_level(&ctx);
 
   gs_set_ztest(2);
@@ -105,6 +106,15 @@ int main(int argc, char *argv[]) {
     trace("gs flip buffers");
     gs_flip();
     ctx_update(&ctx, 1.f/30.f);
+    /*
+    if (button_pressed(BUTTON_SELECT)) {
+      if (log_output_level == LOG_LEVEL_TRACE) {
+        log_output_level = LOG_LEVEL_DEBUG;
+      } else {
+        log_output_level = LOG_LEVEL_TRACE;
+      }
+    }
+    */
   }
 }
 

@@ -10,19 +10,7 @@
 #include "../draw.h"
 #include "../io.h"
 #include "../game/context.h"
-
-enum trigger_area_kind {
-  TRIGGER_NIL,
-  TRIGGER_LOAD_LEVEL,
-};
-
-struct trigger_area {
-  int32_t position[2];
-  uint32_t size[2];
-  enum trigger_area_kind kind;
-  char *arg;
-  size_t arg_len;
-};
+#include "../game/trigger.h"
 
 struct level_loaded {
   char short_name[NAME_LEN]; 
@@ -35,7 +23,28 @@ struct level_loaded {
   struct trigger_area *areas;
 };
 
+static int map_biggest_dims(struct level_tilemap_def *ld, size_t count, int *w, int *h) {
+  *w = 0;
+  *h = 0;
+  for (int i = 0; i < count; i++) {
+    int gw = ld[i].size[0]*GRID_SIZE;
+    if (gw > *w) {
+      logdbg("biggest dim w: %d", gw);
+      *w = gw;
+    }
+    int gh = ld[i].size[1]*GRID_SIZE;
+    if (gh > *h) {
+      logdbg("biggest dim h: %d", gh);
+      *h = gh;
+    }
+  }
+  return 0;
+}
+
+
+
 static int loaded_draw(struct gamectx *ctx, struct levelctx *lvl);
+static int loaded_update(struct gamectx *ctx, struct levelctx *lvl, float dt);
 int load_assets(
     const char *fname,
     struct level_header *header,
@@ -57,7 +66,7 @@ int load_level_areas(
 
 int load_tga(const char *fname, struct levelctx *lvl, struct ee_texture *tgt);
 
-int level_load(const char *fname, struct gamectx *ctx, struct levelctx *lvl) {
+int fmt_load_level(struct gamectx *ctx, struct levelctx *lvl, const char *fname) {
   // read header and defs
   struct level_loaded *loaded = alloc_from(&lvl->allocator, 1, sizeof(struct level_loaded));
   if (!loaded) {
@@ -111,21 +120,23 @@ int level_load(const char *fname, struct gamectx *ctx, struct levelctx *lvl) {
   read_head += header.asset_def_count* sizeof(struct asset_def);
 
   struct level_area_def *area_defs = alloc_from(&lvl->allocator, 
-      header.area_def_count, sizeof(struct level_area_def));
-  if (!area_defs) {
-    logerr("alloc area defs: %s", fname);
+        header.area_def_count, sizeof(struct level_area_def));
+  if (header.area_def_count > 0) {
+      if (!area_defs) {
+      logerr("alloc area defs: %s", fname);
+    }
+    logdbg("read area defs @ %X [+ %X]", read_head,
+        header.area_def_count * sizeof(struct level_area_def));
+    rc = io_read_file_part(fname, area_defs, 
+        header.area_def_count * sizeof(struct level_area_def),
+        read_head, 
+        read_head + header.area_def_count * sizeof(struct level_area_def));
+    if (!rc) {
+      logerr("read area defs: %s", fname);
+      return 1;
+    }
+    logdbg("area defs size = %zu", header.area_def_count * sizeof(struct level_area_def));
   }
-  logdbg("read area defs @ %X [+ %X]", read_head,
-      header.area_def_count * sizeof(struct level_area_def));
-  rc = io_read_file_part(fname, area_defs, 
-      header.area_def_count * sizeof(struct level_area_def),
-      read_head, 
-      read_head + header.area_def_count * sizeof(struct level_area_def));
-  if (!rc) {
-    logerr("read area defs: %s", fname);
-    return 1;
-  }
-  logdbg("area defs size = %zu", header.area_def_count * sizeof(struct level_area_def));
 
   // =====================
   // read + init data
@@ -134,11 +145,13 @@ int level_load(const char *fname, struct gamectx *ctx, struct levelctx *lvl) {
     logerr("alloc loaded textures: %s", fname);
     return 1;
   }
+  /*
   loaded->maps = alloc_from(&lvl->allocator, header.tilemap_def_count, sizeof(struct tile_map));
   if (!loaded->maps) {
     logerr("alloc loaded tilemaps: %s", fname);
     return 1;
   }
+  */
   loaded->areas = alloc_from(&lvl->allocator, header.area_def_count, sizeof(struct trigger_area));
   if (!loaded->areas) {
     logerr("alloc loaded areas: %s", fname);
@@ -161,11 +174,31 @@ int level_load(const char *fname, struct gamectx *ctx, struct levelctx *lvl) {
   loaded->tilemap_count = header.tilemap_def_count;
   loaded->area_count = header.area_def_count;
   memcpy(loaded->short_name, header.short_name, NAME_LEN);
+  lvl->loaded_name = alloc_from(&lvl->allocator, 1, strlen(fname));
+  if (!lvl->loaded_name) {
+    logerr("load level: loaded name alloc failed: %s", fname);
+    return 1;
+  }
+  strcpy(lvl->loaded_name, fname);
   lvl->leveldata = loaded;
-  lvl->update = 0;
+  lvl->update = loaded_update;
   lvl->cleanup = 0;
   lvl->draw = loaded_draw;
   lvl->active = 1;
+  int max_width, max_height;
+  map_biggest_dims(tilemap_defs, header.tilemap_def_count, &max_width, &max_height);
+  int size_x = header.world_offset[0] + max_width;
+  int size_y = header.world_offset[1] + max_height;
+  logdbg("bounds t size: %d, %d", size_x, size_y);
+  lvl->bounds[0] = header.world_offset[0];
+  lvl->bounds[1] = header.world_offset[1];
+  lvl->bounds[2] = size_x;
+  lvl->bounds[3] = size_y;
+  logdbg("loaded level bounds: [%f %f %f %f]",
+      lvl->bounds[0],
+      lvl->bounds[1],
+      lvl->bounds[2],
+      lvl->bounds[3]);
   logdbg("finished loading level: %s", header.short_name);
   return 0;
 }
@@ -298,6 +331,18 @@ int load_tga(const char *fname, struct levelctx *lvl, struct ee_texture *tgt) {
   tgt->vram_addr = vram_alloc(&lvl->vram, tga.pixels_size, 2048)/4;
   return 0;
 
+}
+
+static int loaded_update(struct gamectx *ctx, struct levelctx *lvl, float dt) {
+  struct level_loaded *loaded = (struct level_loaded *)lvl->leveldata;
+  struct entity *player = ctx_get_player(ctx); 
+  for (int i = 0; i < loaded->area_count; i++) {
+    struct trigger_area *area = &loaded->areas[i];
+    if (trigger_collides_point(area, player->x, player->y)) {
+      trigger_event(area, ctx, lvl);
+    }
+  }
+  return 0;
 }
 
 static int loaded_draw(struct gamectx *ctx, struct levelctx *lvl) {

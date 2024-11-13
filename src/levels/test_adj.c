@@ -8,6 +8,7 @@
 #include "../game/context.h"
 #include "../game/entity.h"
 
+/*
 struct ldata {
   float last_x;
   int midway;
@@ -94,3 +95,4 @@ int level_test_adj_init(struct gamectx *ctx, struct levelctx *lvl) {
     return 0;
 }
 
+*/

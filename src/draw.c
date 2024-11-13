@@ -60,7 +60,7 @@ void draw_tile_map(struct tile_map *tm, float tile_square, struct ee_texture *te
             tm->world_offset_y + TILE_SIZE*y - cam->position[1], 
             TILE_SIZE, 
             TILE_SIZE, 
-            t);
+            t-1);
       }
     }
   }

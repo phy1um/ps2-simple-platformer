@@ -47,6 +47,6 @@ struct __attribute__((packed)) level_area_def {
   uint32_t arg_len;
 };
 
-int level_load(const char *fname, struct gamectx *ctx, struct levelctx *lvl);
+int fmt_load_level(struct gamectx *ctx, struct levelctx *lvl, const char *);
 
 #endif

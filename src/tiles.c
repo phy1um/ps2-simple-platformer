@@ -9,6 +9,7 @@ void tile_map_init(struct tile_map *tm, int w, int h, int grid_size, int offset_
   if (!tm) {
     logerr("init NULL tilemap");
   }
+  logdbg("init tilemap @ (%d, %d) with width = %d, height = %d", offset_x, offset_y, w, h);
   tm->width = w;
   tm->height = h;
   tm->grid_size = grid_size;

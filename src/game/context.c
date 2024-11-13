@@ -1,6 +1,7 @@
 #include <stdlib.h>
 
 #include <p2g/log.h>
+#include <p2g/pad.h>
 #include "context.h"
 #include "entity.h"
 #include "../tiles.h"
@@ -8,6 +9,15 @@
 
 #define LEVEL_MAX 2
 #define LEVEL_HEAP_SIZE (2*1024*1024)
+
+static int ctx_point_in_level(struct levelctx *lvl, float x, float y) {
+  return (
+      x >= lvl->bounds[0]
+      && y >= lvl->bounds[1]
+      && x <= lvl->bounds[2]
+      && y <= lvl->bounds[3]
+    );
+}
 
 void *level_alloc(struct levelctx *lvl, size_t num, size_t size) {
   size_t total = num*size;
@@ -47,7 +57,7 @@ int ctx_init(struct gamectx *ctx, struct vram_slice *vram) {
     ctx->levels[i].vram.head = vram_head;
     ctx->levels[i].vram.end = vram_head + vram_level_size;
     vram_head += vram_level_size;
-    logdbg("init level slot %d: heap @ %X, size = %d", i, ctx->levels[i].heap, LEVEL_HEAP_SIZE);
+    logdbg("init level slot %d: heap @ %p, size = %d", i, ctx->levels[i].heap, LEVEL_HEAP_SIZE);
   }
   return 0;
 }
@@ -93,12 +103,22 @@ int ctx_is_free_box(struct gamectx *ctx, float x, float y, float w, float h) {
 
 int ctx_draw(struct gamectx *ctx) {
   trace("draw tilemaps");
-  if (ctx->levels[0].active) {
+  if (ctx->levels[0].active 
+      && camera_contains_bounds(&ctx->camera, 
+        ctx->levels[0].bounds[0],
+        ctx->levels[0].bounds[1],
+        ctx->levels[0].bounds[2],
+        ctx->levels[0].bounds[3])) {
     if (ctx->levels[0].draw) {
       ctx->levels[0].draw(ctx, &ctx->levels[0]);
     }
   }
-  if (ctx->levels[1].active) {
+  if (ctx->levels[1].active
+      && camera_contains_bounds(&ctx->camera, 
+        ctx->levels[1].bounds[0],
+        ctx->levels[1].bounds[1],
+        ctx->levels[1].bounds[2],
+        ctx->levels[1].bounds[3])) {
     if (ctx->levels[1].draw) {
       ctx->levels[1].draw(ctx, &ctx->levels[1]);
     }
@@ -110,22 +130,41 @@ int ctx_draw(struct gamectx *ctx) {
 }
 
 int ctx_update(struct gamectx *ctx, float dt) {
+  // TODO: update this when there are more entities..
+  if (button_pressed(BUTTON_SELECT)) {
+    logdbg("active area bounds: [%f, %f, %f, %f]", 
+        ctx->levels[ctx->active_level].bounds[0],
+        ctx->levels[ctx->active_level].bounds[1],
+        ctx->levels[ctx->active_level].bounds[2],
+        ctx->levels[ctx->active_level].bounds[3]);
+    logdbg("camera bounds: [%f, %f, %f, %f]",
+        ctx->camera.position[0],
+        ctx->camera.position[1],
+        ctx->camera.position[0] + ctx->camera.bounds[0],
+        ctx->camera.position[1] + ctx->camera.bounds[1]);
+  }
+
+  ctx->player_index = 0;
   entity_update_list(ctx->entities, ENTITY_MAX, ctx, dt);
   for (int i = 0; i < LEVEL_MAX; i++) {
     if (ctx->levels[i].active && ctx->levels[i].update) {
       ctx->levels[i].update(ctx, &ctx->levels[i], dt);
+      struct entity *player = ctx_get_player(ctx);
+      if (ctx_point_in_level(&ctx->levels[i], player->x, player->y)) {
+        ctx->active_level = i;
+      }
     }
   }
   return 0;
 }
 
-int ctx_load_level(struct gamectx *ctx, level_init_fn fn) {
+int ctx_load_level(struct gamectx *ctx, level_init_fn fn, const char *arg) {
   unsigned int tgt_index = (ctx->active_level + 1) % LEVEL_MAX;
   struct levelctx *x = &ctx->levels[tgt_index];
   if (x->active) {
     ctx_free_level(ctx);
   }
-  return fn(ctx, x);
+  return fn(ctx, x, arg);
 }
 
 int ctx_swap_active_level(struct gamectx *ctx) {
@@ -146,5 +185,20 @@ int ctx_free_level(struct gamectx *ctx) {
   x->collision.height = 0;
   vram_slice_reset_head(&x->vram);
   return 0;
+}
+
+struct entity *ctx_get_player(struct gamectx *ctx) {
+  if (ctx->player_index >= ENTITY_MAX) {
+    logerr("get player: player index: %zu", ctx->player_index);
+    return 0;
+  }
+  return &ctx->entities[ctx->player_index];
+}
+
+struct levelctx * ctx_get_active_level(struct gamectx *ctx) {
+  return &ctx->levels[ctx->active_level];
+}
+struct levelctx * ctx_get_inactive_level(struct gamectx *ctx) {
+  return &ctx->levels[(ctx->active_level+1)%LEVEL_MAX];
 }
 

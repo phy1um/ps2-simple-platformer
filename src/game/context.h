@@ -12,7 +12,7 @@
 
 struct gamectx;
 struct levelctx;
-typedef int(*level_init_fn)(struct gamectx *, struct levelctx *);
+typedef int(*level_init_fn)(struct gamectx *, struct levelctx *, const char *arg);
 typedef int(*level_update_fn)(struct gamectx *, struct levelctx *, float dt);
 typedef int(*level_cleanup_fn)(struct gamectx *, struct levelctx *);
 typedef int(*level_draw_fn)(struct gamectx *, struct levelctx *);
@@ -21,6 +21,7 @@ struct levelctx {
   int active;
   struct tile_map decoration;
   struct tile_map collision;
+  float bounds[4];
   level_update_fn update;
   level_cleanup_fn cleanup;
   level_draw_fn draw;
@@ -30,6 +31,7 @@ struct levelctx {
   struct allocator allocator;
   struct vram_slice vram;
   void *leveldata;
+  char *loaded_name;
 };
 
 struct gamectx {
@@ -37,6 +39,7 @@ struct gamectx {
   size_t entity_alloc_head;
   struct game_camera camera;
   struct levelctx levels[2];
+  size_t player_index;
   unsigned int active_level;
 };
 
@@ -50,9 +53,14 @@ int ctx_is_free_box(struct gamectx *ctx, float x, float y, float w, float h);
 int ctx_draw(struct gamectx *ctx);
 int ctx_update(struct gamectx *ctx, float dt);
 
-int ctx_load_level(struct gamectx *ctx, level_init_fn fn);
+int ctx_load_level(struct gamectx *ctx, level_init_fn fn, const char *arg);
 int ctx_swap_active_level(struct gamectx *ctx);
 int ctx_free_level(struct gamectx *ctx);
+
+struct entity *ctx_get_player(struct gamectx *ctx);
+
+struct levelctx * ctx_get_active_level(struct gamectx *ctx);
+struct levelctx * ctx_get_inactive_level(struct gamectx *ctx);
 
 void *level_alloc(struct levelctx *lvl, size_t num, size_t size);
 

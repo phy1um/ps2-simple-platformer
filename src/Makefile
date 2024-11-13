@@ -17,7 +17,7 @@ run: $(EE_BIN)
 	pcsx2-qt $(shell pwd)/$(EE_BIN)
 
 runps2: $(EE_BIN)
-	ps2client -h $(PS2HOST) -t 10 execee host:$(EE_BIN)
+	ps2client -h $(PS2HOST) -t 500 execee host:$(EE_BIN)
 
 .PHONY: resetps2
 resetps2:
@@ -38,7 +38,7 @@ CFLAGS+=$(EE_INCS) -I./sim/include $(EE_CFLAGS)
 $(EE_BIN): $(EE_OBJS) sim/p2g.o
 	gcc -g -o sim.elf $(CFLAGS) $^
 
-level_test: test/level_load.o game/context.o io.o levels/fmt.o io.o vram.o tiles.o game/entity.o wad.o alloc.o tga.o game/camera.o levels/test_load.o levels/test_entry.o levels/test_adj.o levels/shared.o
+level_test: test/level_load.o game/context.o io.o levels/fmt.o io.o vram.o tiles.o game/entity.o wad.o alloc.o tga.o game/camera.o levels/test_load.o levels/test_entry.o levels/test_adj.o levels/shared.o game/trigger.o
 	gcc -g -o tst $^ $(CFLAGS)
 else
 include $(PS2SDK)/samples/Makefile.eeglobal

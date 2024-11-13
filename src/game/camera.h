@@ -15,5 +15,6 @@ int camera_transform(struct game_camera *c, float x, float y, float out[2]);
 void camera_debug(struct game_camera *c);
 
 int camera_contains_area(struct game_camera *c, float x, float y, float w, float h);
+int camera_contains_bounds(struct game_camera *c, float x0, float y0, float x1, float y1);
 
 #endif

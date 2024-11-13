@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
   struct gamectx ctx = {0};
 
   ctx_init(&ctx, &vram);
-  ctx_load_level(&ctx, level_test_load_init);
+  ctx_load_level(&ctx, fmt_load_level, "assets/entry_01.ps2lvl");
 
   return 0;
 }

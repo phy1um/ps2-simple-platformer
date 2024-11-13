@@ -87,9 +87,15 @@ void camera_debug(struct game_camera *c) {
 }
 
 int camera_contains_area(struct game_camera *c, float x, float y, float w, float h) {
-  return (c->position[0]+c->bounds[0] >= x && x+w >= c->position[0])
-    && (c->position[1]+c->bounds[1] >= y && y+h >= c->position[1]);
+  return (c->position[0] < x+w 
+      && x < c->position[0]+c->bounds[0] 
+      && c->position[1] < y+h 
+      && y < c->position[1] + c->bounds[1]);
 }
 
-
+int camera_contains_bounds(struct game_camera *c, float x0, float y0, float x1, float y1) {
+  float w = (x1 - x0);
+  float h = (y1 - y0);
+  return camera_contains_area(c, x0, y0, w, h);
+}
 

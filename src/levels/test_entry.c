@@ -7,15 +7,16 @@
 #include "levels.h"
 #include "../game/context.h"
 
+/*
 struct ldata {
   struct ee_texture tiles;
 };
 
 static void load_textures(struct levelctx *lvl) {
   struct tga_data tga;
-  int rc = tga_from_file("tiles_test0.tga", &tga, &lvl->allocator);
+  int rc = tga_from_file("assets/tiles_test0.tga", &tga, &lvl->allocator);
   if (rc) {
-    logerr("failed to load tiles_test0.tga");
+    logerr("failed to load XXX");
     return;
   }
   struct ldata *ld = lvl->leveldata;
@@ -64,3 +65,4 @@ int level_test_entry_init(struct gamectx *ctx, struct levelctx *lvl) {
     return 0;
 }
 
+*/
