@@ -9,7 +9,7 @@ VERSION = 0
 NAME_LEN = 24
 TILE_DEF_SIZE = 26
 ASSET_DEF_SIZE = 10
-AREA_DEF_SIZE = 24
+AREA_DEF_SIZE = 28
 
 def encode_tilemap_kind(i):
     if i == "collision":
@@ -30,13 +30,18 @@ class Area(object):
     def from_ldtk(o):
         (x, y) = o.get_offset()
         (w, h) = o.get_dimensions() 
-        event_kind = encode_area_event_kind(o.get_field("event_type"))
+        event_kind = o.get_field("event_type")
         return Area(x, y, w, h, event_kind, o.get_field("arg"))
 
     def __init__(self, x, y, w, h, kind, arg):
         self.bounds = (x, y, w, h)
-        self.kind = kind
-        self.arg = arg
+        self.kind = encode_area_event_kind(kind)
+        self.kind_raw = kind
+        if kind == "load_level":
+            self.arg = f"assets/{arg}.ps2lvl"
+        else:
+            self.arg = arg
+            
 
 class Map(object):
     @staticmethod
@@ -195,7 +200,7 @@ class Level(object):
                 + len(self.maps)*TILE_DEF_SIZE 
                 + len(self.assets)*ASSET_DEF_SIZE
                 + len(self.areas)*AREA_DEF_SIZE
-                + 4)
+        )
         to.write(header_bytes)
         to.write(self._serialize_tilemap_definitions(data_chunk))
         to.write(self._serialize_asset_definitions(data_chunk))
