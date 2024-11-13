@@ -33,6 +33,16 @@ class _LDTKLayerBase(_LDTKBase):
     def get_kind(self):
         return "unknown"
 
+class LDTKTileset(_LDTKBase):
+    def __init__(self, o):
+        super().__init__(o)
+
+    def get_uid(self):
+        return self._dict["uid"]
+
+    def get_rel_path(self):
+        return self._dict["relPath"]
+
 class LDTKEntity(_LDTKBase):
     def __init__(self, o):
         super().__init__(o)
@@ -49,6 +59,12 @@ class LDTKEntity(_LDTKBase):
             if field["__identifier"] == name:
                 return field["__value"]
         raise Exception(f"no such field: {name}")
+
+    def has_tag(self, tag):
+        return tag in self._dict["__tags"]
+
+    def get_tile(self):
+        return self._dict["__tile"]
 
 class LDTKEntityLayer(_LDTKLayerBase):
     def __init__(self, o):
@@ -123,6 +139,13 @@ class LDTKLevel(_LDTKBase):
                 if entity.get_name().lower() == "trigger_zone":
                     yield entity
 
+    def deco_entities(self):
+        for layer in self.entity_layers():
+            for eo in layer.entities():
+                entity = LDTKEntity(eo)
+                if entity.has_tag("deco"):
+                    yield entity
+
     def tile_layers(self):
         for layer in self._dict["layerInstances"]:
             if layer["__type"] == "Tiles":
@@ -138,6 +161,16 @@ class LDTKLevel(_LDTKBase):
 class LDTK(object):
     def __init__(self, o):
         self._dict = o
+
+    def get_tileset_by_uid(self, uid):
+        for ts in self._dict["defs"]["tilesets"]:
+            if ts["uid"] == uid:
+                return ts["relPath"]
+        raise Exception(f"no tileset with UID={uid}")
+
+    def tilesets(self):
+        for ts in self._dict["defs"]["tilesets"]:
+            yield LDTKTileset(ts)
 
     def levels(self):
         for l in self._dict["levels"]:

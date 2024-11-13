@@ -10,6 +10,10 @@ NAME_LEN = 24
 TILE_DEF_SIZE = 26
 ASSET_DEF_SIZE = 10
 AREA_DEF_SIZE = 28
+DECO_DEF_SIZE = 28
+
+def rewrite_png(s):
+    return s.replace(".png", ".tga")
 
 def encode_tilemap_kind(i):
     if i == "collision":
@@ -117,28 +121,42 @@ class DataChunk(object):
 
 class Level(object):
     @staticmethod
-    def from_ldtk(o):
+    def from_ldtk(o, tileset_lookup):
         (ox, oy) = o.get_world_offset()
         level = Level(
                 o.get_name(),
                 ox, 
-                oy)
+                oy,
+                tileset_lookup)
         for asset in o.textures():
-            as_tga = asset.replace(".png", ".tga")
+            as_tga = rewrite_png(asset)
             print(f"replaced texture name: {as_tga}")
             level.add_texture_asset(as_tga)
         for area in o.trigger_areas():
             level.add_area(Area.from_ldtk(area))
         for m in o.tile_layers():
             level.add_map(Map.from_ldtk(m))
+        for d in o.deco_entities():
+            level.add_decoration(d)
+            tile = d.get_tile()
+            texture_name = tileset_lookup[tile["tilesetUid"]].get_rel_path()
+            level.add_texture_asset(rewrite_png(texture_name))
         return level
    
-    def __init__(self, name, ox, oy):
+    def __init__(self, name, ox, oy, ts_lookup):
         self.name = name
         self.offset = (ox, oy)
         self.assets = []
         self.maps = []
-        self.areas = []
+        self.areas = [] 
+        self.decos = []
+        self._ts_lookup = ts_lookup
+
+    def get_asset_index(self, name):
+        for i, a in enumerate(self.assets):
+            if a == name or a == rewrite_png(name):
+                return i
+        raise Exception(f"asset not defined: {name} ({rewrite_png(name)}): {self.assets}")
 
     def add_texture_asset(self, a):
         self.assets.append(a)
@@ -149,14 +167,18 @@ class Level(object):
     def add_area(self, a):
         self.areas.append(a)
 
+    def add_decoration(self, d):
+        self.decos.append(d)
+
     def _serialize_header(self):
-        return struct.pack(f"<4s5H2i{NAME_LEN}s",
+        return struct.pack(f"<4s6H2i{NAME_LEN}s",
                          FMT_ID,
                          VERSION,
                          len(self.maps),
                          len(self.assets),
                          0,
                          len(self.areas),
+                         len(self.decos),
                          self.offset[0],
                          self.offset[1],
                          bytes(self.name, "ascii"),
@@ -193,6 +215,19 @@ class Level(object):
 
         return b"".join(bs)
 
+    def _serialize_deco_definitions(self):
+        bs = []
+        for d in self.decos:
+            tile = d.get_tile()
+            texture_name = self._ts_lookup[tile["tilesetUid"]].get_rel_path()
+            asset_ref = self.get_asset_index(texture_name)
+            bs.append(struct.pack("<2i3I4H", *d.get_offset(), *d.get_dimensions(),
+                                  asset_ref, tile["x"], tile["y"], tile["x"]+tile["w"], 
+                                  tile["y"]+tile["h"]))
+        return b"".join(bs)
+
+
+
     def write_to_buffer(self, to):
         header_bytes = self._serialize_header()
         data_chunk = DataChunk(
@@ -200,11 +235,13 @@ class Level(object):
                 + len(self.maps)*TILE_DEF_SIZE 
                 + len(self.assets)*ASSET_DEF_SIZE
                 + len(self.areas)*AREA_DEF_SIZE
+                + len(self.decos)*DECO_DEF_SIZE
         )
         to.write(header_bytes)
         to.write(self._serialize_tilemap_definitions(data_chunk))
         to.write(self._serialize_asset_definitions(data_chunk))
         to.write(self._serialize_area_definitions(data_chunk))
+        to.write(self._serialize_deco_definitions())
         to.write(data_chunk.to_blob())
 
 if __name__ == "__main__":
@@ -213,8 +250,11 @@ if __name__ == "__main__":
     with open(sys.argv[1]) as f:
         o = json.load(f)
         world = ldtk.LDTK(o)
+        tilesets = {}
+        for ts in world.tilesets():
+            tilesets[ts.get_uid()] = ts
         for level in world.levels():
-            lvl = Level.from_ldtk(level)
+            lvl = Level.from_ldtk(level, tilesets)
             path = "assets/" + lvl.name + FILE_EXT
             print(f"writing level to: {path}")
             with open(path, "wb") as f:
