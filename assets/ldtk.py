@@ -74,7 +74,7 @@ class LDTKTileLayer(_LDTKLayerBase):
             grid_y = y//grid
             ind = grid_y*w + grid_x
             v = (sy//grid)*(src_width//grid) + (sx//grid)
-            out[ind] = v
+            out[ind] = v + 1
             # print(f"set map [deco]: {ind} = {v} ({sx}, {sy} = {v})")
         return out
 
