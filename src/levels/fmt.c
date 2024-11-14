@@ -57,7 +57,7 @@ static int map_biggest_dims(struct level_tilemap_def *ld, size_t count, int *w, 
 }
 
 
-
+static int loaded_reload(struct gamectx *ctx, struct levelctx *lvl);
 static int loaded_draw(struct gamectx *ctx, struct levelctx *lvl);
 static int loaded_update(struct gamectx *ctx, struct levelctx *lvl, float dt);
 static int loaded_test_point(struct levelctx *lvl, float x, float y);
@@ -340,6 +340,7 @@ int fmt_load_level(struct gamectx *ctx, struct levelctx *lvl, const char *fname)
   lvl->leveldata = loaded;
   lvl->update = loaded_update;
   lvl->test_point = loaded_test_point;
+  lvl->reload = loaded_reload;
   lvl->cleanup = 0;
   lvl->draw = loaded_draw;
   lvl->active = 1;
@@ -453,3 +454,13 @@ static int loaded_draw(struct gamectx *ctx, struct levelctx *lvl) {
 #endif
   return 0;
 }
+
+static int loaded_reload(struct gamectx *ctx, struct levelctx *lvl) {
+  vram_slice_reset_head(&lvl->vram);
+  lvl->heap_head = 0;
+  char fname[120];
+  strncpy(fname, lvl->loaded_name, 120);
+  return fmt_load_level(ctx, lvl, fname);
+}
+
+
