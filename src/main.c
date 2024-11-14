@@ -106,15 +106,10 @@ int main(int argc, char *argv[]) {
     trace("gs flip buffers");
     gs_flip();
     ctx_update(&ctx, 1.f/30.f);
-    /*
     if (button_pressed(BUTTON_SELECT)) {
-      if (log_output_level == LOG_LEVEL_TRACE) {
-        log_output_level = LOG_LEVEL_DEBUG;
-      } else {
-        log_output_level = LOG_LEVEL_TRACE;
-      }
+      logdbg("reload");
+      ctx_reload(&ctx);
     }
-    */
   }
 }
 
