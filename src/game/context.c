@@ -163,6 +163,19 @@ int ctx_update(struct gamectx *ctx, float dt) {
   return 0;
 }
 
+int ctx_reload(struct gamectx *ctx) {
+  for (int i = 0; i < LEVEL_MAX; i++) {
+    if (!ctx->levels[i].reload) {
+      continue;
+    }
+    if (ctx->levels[i].reload(ctx, &ctx->levels[i])) {
+      logerr("reload level: %d", i); 
+      return 1;
+    }
+  }
+  return 0;
+}
+
 int ctx_load_level(struct gamectx *ctx, level_init_fn fn, const char *arg) {
   unsigned int tgt_index = (ctx->active_level + 1) % LEVEL_MAX;
   struct levelctx *x = &ctx->levels[tgt_index];
@@ -185,6 +198,7 @@ int ctx_free_level(struct gamectx *ctx) {
   x->draw = 0;
   x->update = 0;
   x->test_point = 0;
+  x->reload = 0;
   if (x->cleanup) {
     x->cleanup(ctx, x);
     x->cleanup = 0;

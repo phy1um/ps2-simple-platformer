@@ -17,6 +17,7 @@ typedef int(*level_update_fn)(struct gamectx *, struct levelctx *, float dt);
 typedef int(*level_cleanup_fn)(struct gamectx *, struct levelctx *);
 typedef int(*level_draw_fn)(struct gamectx *, struct levelctx *);
 typedef int(*level_test_point_fn)(struct levelctx *, float x, float y);
+typedef int(*level_reload_fn)(struct gamectx *, struct levelctx *);
 
 struct levelctx {
   int active;
@@ -25,6 +26,7 @@ struct levelctx {
   level_cleanup_fn cleanup;
   level_draw_fn draw;
   level_test_point_fn test_point;
+  level_reload_fn reload;
   void *heap;
   size_t heap_head;
   size_t heap_size;
@@ -52,6 +54,7 @@ int ctx_is_free_box(struct gamectx *ctx, float x, float y, float w, float h);
 
 int ctx_draw(struct gamectx *ctx);
 int ctx_update(struct gamectx *ctx, float dt);
+int ctx_reload(struct gamectx *ctx);
 
 int ctx_load_level(struct gamectx *ctx, level_init_fn fn, const char *arg);
 int ctx_swap_active_level(struct gamectx *ctx);
