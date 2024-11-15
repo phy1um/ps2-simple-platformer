@@ -223,3 +223,16 @@ struct levelctx * ctx_get_inactive_level(struct gamectx *ctx) {
   return &ctx->levels[(ctx->active_level+1)%LEVEL_MAX];
 }
 
+int ctx_print_stats(struct gamectx *ctx) {
+  for (int i = 0; i < LEVEL_MAX; i++) {
+    struct levelctx *lvl = &ctx->levels[i];
+    float heap_pc = ((float)lvl->heap_head) / ((float)lvl->heap_size);
+    float vram_pc = ((float)(lvl->vram.head - lvl->vram.start)/((float)lvl->vram.end - lvl->vram.start));
+    logdbg("stat(%d): [heap %f%% (%zu / %zu)] [vram %f%% (%zu / %zu)]", 
+        i,
+        heap_pc, lvl->heap_head, lvl->heap_size,
+        vram_pc, lvl->vram.head, lvl->vram.end);
+  }
+  return 0;
+}
+

@@ -67,4 +67,7 @@ struct levelctx * ctx_get_inactive_level(struct gamectx *ctx);
 
 void *level_alloc(struct levelctx *lvl, size_t num, size_t size);
 
+
+int ctx_print_stats(struct gamectx *ctx);
+
 #endif

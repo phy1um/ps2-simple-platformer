@@ -19,6 +19,7 @@
 #include "game/context.h"
 #include "game/camera.h"
 #include "game/player.h"
+#include "menu/menu.h"
 
 #include "levels/levels.h"
 #include "levels/fmt.h"
@@ -65,6 +66,8 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   struct gamectx ctx = {0};
+  struct menu_state menu_state;
+  int is_in_menu = 0;
 
   size_t player_index = 0;
   if (ctx_next_entity(&ctx, &player_index)) {
@@ -97,6 +100,9 @@ int main(int argc, char *argv[]) {
     camera_focus(&ctx.camera, player->x, player->y);
     camera_debug(&ctx.camera);
     ctx_draw(&ctx);
+    if (is_in_menu) {
+      menu_draw(&menu_state, 10, 10);
+    }
     trace("frame end");
     draw_frame_end();
     trace("draw wait");
@@ -105,10 +111,13 @@ int main(int argc, char *argv[]) {
     graph_wait_vsync();
     trace("gs flip buffers");
     gs_flip();
-    ctx_update(&ctx, 1.f/30.f);
-    if (button_pressed(BUTTON_SELECT)) {
-      logdbg("reload");
-      ctx_reload(&ctx);
+    if (is_in_menu) {
+      menu_drive_inputs(&menu_state, &ctx);
+    } else {
+      ctx_update(&ctx, 1.f/30.f);
+      if (button_pressed(BUTTON_SELECT)) {
+        menu_dbg_init(&menu_state, &is_in_menu);
+      }
     }
   }
 }
