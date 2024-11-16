@@ -83,25 +83,34 @@ int main(int argc, char *argv[]) {
   float cam_fbox[] = {50., 50.};
   camera_init(&ctx.camera, cam_bounds, cam_fbox);
 
-  ctx_init(&ctx, &vram);
+  if (ctx_init(&ctx, &vram)) {
+    p2g_fatal("init context");
+    return 1;
+  }
   ctx_load_level(&ctx, fmt_load_level, "assets/entry_01.ps2lvl");
   ctx_swap_active_level(&ctx);
 
   gs_set_ztest(2);
 
-  // load_textures(&vram);
   draw2d_clear_colour(33, 38, 63);
+  int first_frame = 1;
   while(1) {
     pad_frame_start();
     pad_poll();
     trace("frame start - dma wait");
     dma_wait_fast();
     draw_frame_start();
+    if (first_frame) {
+      if(draw_upload_ee_texture(ctx.game_font.texture)) {
+        p2g_fatal("game font upload");
+      }
+      first_frame = 0;
+    }
     camera_focus(&ctx.camera, player->x, player->y);
     camera_debug(&ctx.camera);
     ctx_draw(&ctx);
     if (is_in_menu) {
-      menu_draw(&menu_state, 10, 10);
+      menu_draw(&menu_state, &ctx.game_font, 10, 10);
     }
     trace("frame end");
     draw_frame_end();
@@ -116,6 +125,7 @@ int main(int argc, char *argv[]) {
     } else {
       ctx_update(&ctx, 1.f/30.f);
       if (button_pressed(BUTTON_SELECT)) {
+        // log_output_level = LOG_LEVEL_TRACE;
         menu_dbg_init(&menu_state, &is_in_menu);
       }
     }
