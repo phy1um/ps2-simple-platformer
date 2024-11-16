@@ -9,6 +9,9 @@ Built live on Twitch @ [](https://twitch.tv/tommarkstalkscode)
 Tileset is Caves of Gallet 2 from kaizarnike on itch.io:
 https://kaizarnike.itch.io/caves-of-gallet-2
 
+8x8 pixel font by "darkrose" @ opengameart.org
+https://opengameart.org/content/8x8-ascii-bitmap-font-with-c-source
+
 ## code
 
 Thanks to PS2SDK for underpinning everything I compile and run
@@ -19,3 +22,4 @@ Thanks to PS2SDK for underpinning everything I compile and run
 - refractionpcsx2
 - \_fobes
 - The people who are watching me on Twitch and YouTube <3
+
