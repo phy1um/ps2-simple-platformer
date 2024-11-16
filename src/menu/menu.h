@@ -4,6 +4,7 @@
 
 #include <stddef.h>
 #include "../game/context.h"
+#include "../draw/font.h" 
 
 struct menu_state;
 typedef int (*menu_action_fn)(struct gamectx*, struct menu_state*);
@@ -33,7 +34,7 @@ int menu_back(struct menu_state *st);
 int menu_push(struct menu_state *st, struct menu_set *set);
 int menu_pop(struct menu_state *st);
 
-int menu_draw(struct menu_state *st, float mx, float my);
+int menu_draw(struct menu_state *st, struct ee_font *fnt, float mx, float my);
 int menu_drive_inputs(struct menu_state *st, struct gamectx *ctx);
 
 void menu_dbg_init(struct menu_state *st, int *done);

@@ -5,9 +5,31 @@
 
 static int *menu_active_ptr = 0;
 
-static int toggle_debug_draw(struct gamectx *ctx, struct menu_state *menu) {
-  logdbg("toggle debug draw :)");
+static int action_nil(struct gamectx *ctx, struct menu_state *menu) {
   return 0;
+}
+
+static struct menu_set dbg_menu_1_draw = {
+  .entries = {
+    {
+      .name = "collis",
+      .action = action_nil,
+    },
+    {
+      .name = "triggers",
+      .action = action_nil,
+    },
+    {
+      .name = "overlays",
+      .action = action_nil,
+    }
+  },
+  .cursor = 0,
+  .entry_count = 3,
+};
+
+static int dbg_draw_submenu(struct gamectx *ctx, struct menu_state *menu) {
+  return menu_push(menu, &dbg_menu_1_draw);
 }
 
 static int reload(struct gamectx *ctx, struct menu_state *menu) {
@@ -29,7 +51,7 @@ static struct menu_set dbg_menu_0 = {
   .entries = {
     {
       .name = "dbg draw",
-      .action = toggle_debug_draw,
+      .action = dbg_draw_submenu,
     },
     {
       .name = "stats",

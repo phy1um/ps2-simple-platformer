@@ -104,15 +104,17 @@ int menu_pop(struct menu_state *st) {
   return 0;
 }
 
-static const float MENU_COL_W = 70;
-int menu_draw(struct menu_state *st, float mx, float my) {
+static const float MENU_TEXT_SCALE = 2.f;
+static const float MENU_COL_W = 14*MENU_TEXT_SCALE;
+int menu_draw(struct menu_state *st, struct ee_font *fnt, float mx, float my) {
   if (!st) {
     logerr("draw null menu");
     return 1;
   }
 
+  // logdbg("menu draw start"); 
   for(size_t i = 0; i < st->stack_head; i++) {
-    float lhs = mx + (MENU_COL_W*i) + (4*i);
+    float lhs = mx + (MENU_COL_W*fnt->char_dims[0]*i) + (4*i);
     struct menu_set *set = st->stack[i];
     if (!set) {
       logerr("draw menu: invalid set %zu", i);
@@ -120,7 +122,7 @@ int menu_draw(struct menu_state *st, float mx, float my) {
     }
     float height = set->entry_count * 18;
     draw2d_set_colour(0, 0, 0, 0x80);
-    draw2d_rect(lhs, my, MENU_COL_W, height);
+    draw2d_rect(lhs, my, MENU_COL_W*fnt->char_dims[0], height*MENU_TEXT_SCALE);
     for (size_t c = 0; c < set->entry_count; c++) {
       struct menu_entry *e = get_entry(set, c);
       if (!e) {
@@ -128,12 +130,13 @@ int menu_draw(struct menu_state *st, float mx, float my) {
         return 1;
       }
       draw2d_set_colour(0x80, 0x80, 0x80, 0x80); 
-      draw2d_rect(lhs+3.2f, my+(16*c)+(1.8f*c), strlen(e->name), 16);
+      font_putstr(fnt, e->name, strlen(e->name), lhs+3.2f, my+((fnt->char_dims[1] + 6.f)*c)*MENU_TEXT_SCALE, MENU_TEXT_SCALE);
       if (c == set->cursor) {
-        draw2d_rect(lhs+0.5, my+(16*c)+(1.8f*c)+8, 2, 2);
+        draw2d_rect(lhs+0.5, my+((fnt->char_dims[1]+6.f)*c)*MENU_TEXT_SCALE+(fnt->char_dims[1]*MENU_TEXT_SCALE)/2, 2, 2);
       }
     }
   }
+  // logdbg("menu draw done");
   return 0;
 }
 
