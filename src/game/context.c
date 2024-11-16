@@ -4,11 +4,34 @@
 #include <p2g/pad.h>
 #include "context.h"
 #include "entity.h"
+#include "../tga.h"
 #include "../tiles.h"
 #include "../draw.h"
 
 #define LEVEL_MAX 2
 #define LEVEL_HEAP_SIZE (2*1024*1024)
+
+#ifndef GLOBAL_VRAM_SIZE 
+#define GLOBAL_VRAM_SIZE 224*1024
+#endif
+#ifndef GLOBAl_HEAP_SIZE
+#define GLOBAL_HEAP_SIZE 220*1024
+#endif
+
+static void *global_alloc(struct gamectx *self, size_t num, size_t size) {
+  size_t total = num*size;
+  while (self->global_heap_head % 4 != 0) {
+    self->global_heap_head += 1;
+  }
+  trace("global allocator: head=%zu size=%zu ptr=%p", self->global_heap_head, total, self->global_heap);
+  if (self->global_heap_head + total > self->global_heap_size) {
+    logerr("global heap overflow: %zu x %zu", num, size);
+    return 0;
+  }
+  void *out = self->global_heap + self->global_heap_head;
+  self->global_heap_head += total;
+  return out;
+}
 
 static int ctx_point_in_level(struct levelctx *lvl, float x, float y) {
   return (
@@ -34,11 +57,44 @@ void *level_alloc(struct levelctx *lvl, size_t num, size_t size) {
   return out;
 }
 
+static int ctx_load_statics(struct gamectx *ctx) {
+  struct ee_texture *tgt = alloc_from(&ctx->global_alloc, 1, sizeof(struct ee_texture));
+  struct tga_data tga;
+  int rc = tga_from_file("assets/8x8.tga", &tga, &ctx->global_alloc);
+  if (rc) {
+    logerr("failed to load font: assets/8x8.tga");
+    return 1;
+  }
+  tgt->pixels = tga.pixels;
+  tgt->size = tga.pixels_size;
+  tgt->width = tga.header.width;
+  tgt->height = tga.header.height;
+  size_t vr_bytes = vram_alloc(&ctx->global_vram, tga.pixels_size, 2048);
+  tgt->vram_addr = vr_bytes/4;
+  if (vr_bytes == VRAM_INVALID) {
+    logerr("font VRAM alloc");
+    return 1;
+  }
+  // tga and pixel data allocated forever!
+  logdbg("load font @ %X", tgt->vram_addr);
+  font_init(&ctx->game_font, tgt, 8, 8, 128, 64, 1.f);
+  return 0;
+}
 
 int ctx_init(struct gamectx *ctx, struct vram_slice *vram) {
-  vram_addr_t vram_size = vram->end - vram->head;
-  vram_addr_t vram_level_size = vram_size / LEVEL_MAX;
-  vram_addr_t vram_head = vram->head;
+  ctx->global_heap = calloc(1, GLOBAL_HEAP_SIZE);
+  ctx->global_heap_head = 0;
+  ctx->global_heap_size = GLOBAL_HEAP_SIZE;
+  ctx->global_alloc.state = ctx;
+  ctx->global_alloc.alloc = (alloc_fn) global_alloc;
+
+  ctx->global_vram.start = vram->head;
+  ctx->global_vram.head = vram->head;
+  ctx->global_vram.end = ctx->global_vram.start + GLOBAL_VRAM_SIZE;
+
+  vram_addr_t vram_size = vram->end - ctx->global_vram.end ;
+  vram_addr_t vram_level_size = vram_size;
+  vram_addr_t vram_head = ctx->global_vram.end;
   for (int i = 0; i < LEVEL_MAX; i++) {
     trace("init level %i", i);
     void *heap = calloc(1, LEVEL_HEAP_SIZE);
@@ -54,8 +110,12 @@ int ctx_init(struct gamectx *ctx, struct vram_slice *vram) {
     ctx->levels[i].vram.start = vram_head;
     ctx->levels[i].vram.head = vram_head;
     ctx->levels[i].vram.end = vram_head + vram_level_size;
-    vram_head += vram_level_size;
+    // vram_head += vram_level_size;
     logdbg("init level slot %d: heap @ %p, size = %d", i, ctx->levels[i].heap, LEVEL_HEAP_SIZE);
+  }
+  if (ctx_load_statics(ctx)) {
+    logerr("ctx load statics");
+    return 1;
   }
   return 0;
 }
@@ -224,14 +284,25 @@ struct levelctx * ctx_get_inactive_level(struct gamectx *ctx) {
 }
 
 int ctx_print_stats(struct gamectx *ctx) {
+  const char level_active_marker[] = "*";
+  const char level_inactive_marker[] = "";
+
+  float global_heap_pc = ((float)ctx->global_heap_head) / ((float)ctx->global_heap_size);
+  float global_vram_pc = ((float)(ctx->global_vram.head - ctx->global_vram.start)/((float)ctx->global_vram.end - ctx->global_vram.start));
+  logdbg("stat(global): [heap %.02f%% (%zu / %zu)] [vram %.02f%% (%zu / %zu)]", 
+    global_heap_pc*100, ctx->global_heap_head, ctx->global_heap_size,    
+    global_vram_pc*100, ctx->global_vram.head, ctx->global_vram.end
+  );
   for (int i = 0; i < LEVEL_MAX; i++) {
     struct levelctx *lvl = &ctx->levels[i];
     float heap_pc = ((float)lvl->heap_head) / ((float)lvl->heap_size);
     float vram_pc = ((float)(lvl->vram.head - lvl->vram.start)/((float)lvl->vram.end - lvl->vram.start));
-    logdbg("stat(%d): [heap %f%% (%zu / %zu)] [vram %f%% (%zu / %zu)]", 
+    const char *marker = ctx->active_level == i ? level_active_marker : level_inactive_marker;
+    logdbg("stat(%d)%s: [heap %.02f%% (%zu / %zu)] [vram %.02f%% (%zu / %zu)]", 
         i,
-        heap_pc, lvl->heap_head, lvl->heap_size,
-        vram_pc, lvl->vram.head, lvl->vram.end);
+        marker,
+        heap_pc*100, lvl->heap_head, lvl->heap_size,
+        vram_pc*100, lvl->vram.head, lvl->vram.end);
   }
   return 0;
 }

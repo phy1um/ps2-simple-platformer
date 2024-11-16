@@ -6,6 +6,7 @@
 #include "camera.h"
 #include "../tiles.h"
 #include "../vram.h"
+#include "../draw/font.h"
 
 #define ENTITY_MAX 120
 #define LEVEL_TEXTURE_SLOTS 3
@@ -43,6 +44,12 @@ struct gamectx {
   struct levelctx levels[2];
   size_t player_index;
   unsigned int active_level;
+  struct allocator global_alloc;
+  void *global_heap;
+  size_t global_heap_head;
+  size_t global_heap_size;
+  struct vram_slice global_vram;
+  struct ee_font game_font;
 };
 
 int ctx_init(struct gamectx *ctx, struct vram_slice *vram);
