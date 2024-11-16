@@ -9,9 +9,14 @@ vram_addr_t vram_alloc(struct vram_slice *v, size_t size, size_t align) {
     return VRAM_INVALID;
   }
   if (v->head + size >= v->end) {
-    logerr("vram alloc overflow"); 
+    logerr("vram alloc overflow: head @ %zu, size @ %zu, end @ %zu", v->head, size, v->end); 
     return VRAM_INVALID;
   }
+  if (v->head + size >= VRAM_MAX) {
+    logerr("vram alloc overflow: misconfigured max (addr OOB %zu)", v->head + size); 
+    return VRAM_INVALID;
+  }
+
   while(v->head % align != 0) {
     v->head += 1;
   }
