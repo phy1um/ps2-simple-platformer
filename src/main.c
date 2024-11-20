@@ -3,6 +3,7 @@
 #include <graph.h>
 #include <dma.h>
 #include <gs_psm.h>
+#include <gs_privileged.h>
 
 #include <p2g/log.h>
 #include <p2g/ps2draw.h>
@@ -11,6 +12,7 @@
 
 #include <stdlib.h>
 #include <time.h>
+#include <kernel.h>
 
 #include "draw.h"
 #include "tiles.h"
@@ -23,6 +25,42 @@
 
 #include "levels/levels.h"
 #include "levels/fmt.h"
+
+#ifndef VBLANK_TIMEOUT_MAX
+#define VBLANK_TIMEOUT_MAX 999999
+#endif
+
+void run_ctx_loop(struct gamectx *ctx);
+
+unsigned char ctx_stack[0x800] __attribute__((aligned(64)));
+static s32 main_cleanup_threadid = 0;
+static s32 main_event_loop_threadid = 0;
+
+static int vblank_without_draw = 0;
+static int overseer_vblank_handler(int u) {
+    if (!(*GS_REG_CSR & 2)) {
+      if (vblank_without_draw > VBLANK_TIMEOUT_MAX) {
+        iWakeupThread(main_cleanup_threadid);
+      }
+      vblank_without_draw += 1;
+    } else {
+      vblank_without_draw = 0;
+      *GS_REG_CSR |= 2;
+      iWakeupThread(main_event_loop_threadid);
+  }
+  ExitHandler();
+  return 0;
+}
+
+int register_wake_on_vblank() {
+  info("register vblank handler");
+  int rv = AddIntcHandler(2, overseer_vblank_handler, 0);
+  if (rv == -1) {
+    return 1;
+  }
+  EnableIntc(2);
+  return 0;
+}
 
 int main(int argc, char *argv[]) {
   srand(time(NULL));
@@ -66,8 +104,6 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   struct gamectx ctx = {0};
-  struct menu_state menu_state;
-  int is_in_menu = 0;
 
   size_t player_index = 0;
   if (ctx_next_entity(&ctx, &player_index)) {
@@ -92,43 +128,25 @@ int main(int argc, char *argv[]) {
 
   gs_set_ztest(2);
 
-  draw2d_clear_colour(33, 38, 63);
-  int first_frame = 1;
-  while(1) {
-    pad_frame_start();
-    pad_poll();
-    trace("frame start - dma wait");
-    dma_wait_fast();
-    draw_frame_start();
-    if (first_frame) {
-      if(draw_upload_ee_texture(ctx.game_font.texture)) {
-        p2g_fatal("game font upload");
-      }
-      first_frame = 0;
-    }
-    camera_focus(&ctx.camera, player->x, player->y);
-    camera_debug(&ctx.camera);
-    ctx_draw(&ctx);
-    if (is_in_menu) {
-      menu_draw(&menu_state, &ctx.game_font, 10, 10);
-    }
-    trace("frame end");
-    draw_frame_end();
-    trace("draw wait");
-    draw_wait_finish();
-    trace("vsync wait");
-    graph_wait_vsync();
-    trace("gs flip buffers");
-    gs_flip();
-    if (is_in_menu) {
-      menu_drive_inputs(&menu_state, &ctx);
-    } else {
-      ctx_update(&ctx, 1.f/30.f);
-      if (button_pressed(BUTTON_SELECT)) {
-        // log_output_level = LOG_LEVEL_TRACE;
-        menu_dbg_init(&menu_state, &is_in_menu);
-      }
-    }
+  if (register_wake_on_vblank()) {
+    p2g_fatal("failed to setup VBLANK intc handler"); 
+    return 1;
   }
+
+  draw2d_clear_colour(33, 38, 63);
+
+  main_cleanup_threadid = GetThreadId();
+
+  ee_thread_t ctx_loop = {
+    .func = run_ctx_loop,
+    .stack = ctx_stack,
+    .stack_size = sizeof(ctx_stack),
+    .gp_reg = &_gp,
+    .initial_priority = 5,
+  };
+  main_event_loop_threadid = CreateThread(&ctx_loop);
+  StartThread(main_event_loop_threadid, &ctx); 
+  SleepThread();
+  p2g_fatal("main loop dead");
 }
 
