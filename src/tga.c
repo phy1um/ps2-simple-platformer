@@ -55,6 +55,10 @@ int tga_from_file(const char *file_name, struct tga_data *out, struct allocator 
   if (bytes_read != sizeof(struct tga_header)) {
     return 1;
   }
+  if (out->header.width == 0 || out->header.height == 0) {
+    logerr("invalid tga: width=%d height=%d", out->header.width, out->header.height);
+    return 1;
+  }
   // bytes per pixel
   int bpp = out->header.bps/8;
   int size = out->header.width*out->header.height*bpp;

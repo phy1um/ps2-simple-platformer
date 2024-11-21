@@ -20,7 +20,7 @@ vram_addr_t vram_alloc(struct vram_slice *v, size_t size, size_t align) {
   while(v->head % align != 0) {
     v->head += 1;
   }
-  logdbg("vram alloc @ %X (%X w) for %zu (align %zu)", v->head, v->head/4, size, align);
+  trace("vram alloc @ %X (%X w) for %zu (align %zu)", v->head, v->head/4, size, align);
   vram_addr_t out = v->head;
   v->head += size;
   return out;

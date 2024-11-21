@@ -35,6 +35,7 @@ struct levelctx {
   struct vram_slice vram;
   void *leveldata;
   char *loaded_name;
+  int sema_lock_id;
 };
 
 struct gamectx {
@@ -52,6 +53,8 @@ struct gamectx {
   struct ee_font game_font;
 };
 
+extern struct gamectx *GLOBAL_CTX;
+
 int ctx_init(struct gamectx *ctx, struct vram_slice *vram);
 
 int ctx_next_entity(struct gamectx *ctx, size_t *out);
@@ -65,7 +68,8 @@ int ctx_reload(struct gamectx *ctx);
 
 int ctx_load_level(struct gamectx *ctx, level_init_fn fn, const char *arg);
 int ctx_swap_active_level(struct gamectx *ctx);
-int ctx_free_level(struct gamectx *ctx);
+int __locked_ctx_free_level(struct gamectx *ctx, int tgt_index);
+
 
 struct entity *ctx_get_player(struct gamectx *ctx);
 

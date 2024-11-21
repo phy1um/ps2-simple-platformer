@@ -44,12 +44,12 @@ static int map_biggest_dims(struct level_tilemap_def *ld, size_t count, int *w, 
   for (int i = 0; i < count; i++) {
     int gw = ld[i].size[0]*GRID_SIZE;
     if (gw > *w) {
-      logdbg("biggest dim w: %d", gw);
+      //logdbg("biggest dim w: %d", gw);
       *w = gw;
     }
     int gh = ld[i].size[1]*GRID_SIZE;
     if (gh > *h) {
-      logdbg("biggest dim h: %d", gh);
+      //logdbg("biggest dim h: %d", gh);
       *h = gh;
     }
   }
@@ -78,7 +78,7 @@ int load_level_areas(
   }
   for (int i = 0; i < header->area_def_count; i++) {
     struct level_area_def *a = &area_defs[i]; 
-    logdbg("loading area (%d): kind=%lu, arg offset=%lu, arg len=%lu", i,
+    trace("loading area (%d): kind=%lu, arg offset=%lu, arg len=%lu", i,
         a->kind, a->arg_file_offset, a->arg_len);
     char *arg = alloc_from(&lvl->allocator, 1, a->arg_len+1);
     if (!arg) {
@@ -118,7 +118,7 @@ int load_assets(
   }
   for (int i = 0; i < header->asset_def_count; i++) {
       struct asset_def *a = &asset_defs[i];
-      logdbg("loading asset (%d): kind=%d, name offset=%lu, name len=%lu", i,
+      trace("loading asset (%d): kind=%d, name offset=%lu, name len=%lu", i,
           a->asset_kind, a->file_offset_name, a->name_len);
       char *name = alloc_from(&lvl->allocator, 1, a->name_len + 1); 
       if (!name) {
@@ -192,7 +192,7 @@ int load_level_maps(
         header->world_offset[1]+t->local_offset[1], 
         &lvl->allocator);
     uint32_t map_size = t->size[0]*t->size[1];
-    logdbg("reading tilemap (%d) @ %lu for %lu into -> %p", kind, t->map_file_offset, map_size, tgt->tiles.tiles);
+    trace("reading tilemap (%d) @ %lu for %lu into -> %p", kind, t->map_file_offset, map_size, tgt->tiles.tiles);
     io_read_file_part(fname, tgt->tiles.tiles, map_size, t->map_file_offset, 
         t->map_file_offset + map_size);
   }
@@ -237,7 +237,7 @@ int fmt_load_level(struct gamectx *ctx, struct levelctx *lvl, const char *fname)
     return 1;
   }
   size_t read_head = sizeof(struct level_header);
-  logdbg("read tilemap defs @ %X [+ %X]", read_head,
+  trace("read tilemap defs @ %X [+ %X]", read_head,
       header.tilemap_def_count * sizeof(struct level_tilemap_def));
   rc = io_read_file_part(fname, tilemap_defs, 
       header.tilemap_def_count * sizeof(struct level_tilemap_def),
@@ -255,7 +255,7 @@ int fmt_load_level(struct gamectx *ctx, struct levelctx *lvl, const char *fname)
     logerr("alloc asset definitions: %s", fname);
     return 1;
   }
-  logdbg("read asset defs @ %X [+ %X]", read_head,
+  trace("read asset defs @ %X [+ %X]", read_head,
       header.asset_def_count * sizeof(struct asset_def));
   rc = io_read_file_part(fname, asset_defs, 
       header.asset_def_count * sizeof(struct asset_def),
@@ -273,7 +273,7 @@ int fmt_load_level(struct gamectx *ctx, struct levelctx *lvl, const char *fname)
       if (!area_defs) {
       logerr("alloc area defs: %s", fname);
     }
-    logdbg("read area defs @ %X [+ %X]", read_head,
+    trace("read area defs @ %X [+ %X]", read_head,
         header.area_def_count * sizeof(struct level_area_def));
     rc = io_read_file_part(fname, area_defs, 
         header.area_def_count * sizeof(struct level_area_def),
@@ -283,7 +283,7 @@ int fmt_load_level(struct gamectx *ctx, struct levelctx *lvl, const char *fname)
       logerr("read area defs: %s", fname);
       return 1;
     }
-    logdbg("area defs size = %zu", header.area_def_count * sizeof(struct level_area_def));
+    trace("area defs size = %zu", header.area_def_count * sizeof(struct level_area_def));
   }
 
   read_head += header.area_def_count* sizeof(struct level_area_def);
@@ -294,7 +294,7 @@ int fmt_load_level(struct gamectx *ctx, struct levelctx *lvl, const char *fname)
       if (!deco_defs) {
       logerr("alloc deco defs: %s", fname);
     }
-    logdbg("read deco defs @ %X [+ %X]", read_head,
+    trace("read deco defs @ %X [+ %X]", read_head,
         header.deco_def_count * sizeof(struct level_deco_def));
     rc = io_read_file_part(fname, deco_defs, 
         header.deco_def_count * sizeof(struct level_deco_def),
@@ -304,7 +304,7 @@ int fmt_load_level(struct gamectx *ctx, struct levelctx *lvl, const char *fname)
       logerr("read deco defs: %s", fname);
       return 1;
     }
-    logdbg("deco defs size = %zu", header.deco_def_count * sizeof(struct level_deco_def));
+    trace("deco defs size = %zu", header.deco_def_count * sizeof(struct level_deco_def));
   }
 
   // =====================
@@ -352,12 +352,12 @@ int fmt_load_level(struct gamectx *ctx, struct levelctx *lvl, const char *fname)
   lvl->bounds[1] = header.world_offset[1];
   lvl->bounds[2] = size_x;
   lvl->bounds[3] = size_y;
-  logdbg("loaded level bounds: [%f %f %f %f]",
+  trace("loaded level bounds: [%f %f %f %f]",
       lvl->bounds[0],
       lvl->bounds[1],
       lvl->bounds[2],
       lvl->bounds[3]);
-  logdbg("finished loading level: %s (# maps = %d)", header.short_name, header.tilemap_def_count);
+  trace("finished loading level: %s (# maps = %d)", header.short_name, header.tilemap_def_count);
   return 0;
 }
 

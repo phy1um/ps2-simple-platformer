@@ -22,6 +22,7 @@
 #include "game/camera.h"
 #include "game/player.h"
 #include "menu/menu.h"
+#include "task.h"
 
 #include "levels/levels.h"
 #include "levels/fmt.h"
@@ -43,6 +44,7 @@ static int overseer_vblank_handler(int u) {
         iWakeupThread(main_cleanup_threadid);
       }
       vblank_without_draw += 1;
+      iRotateThreadReadyQueue(15);
     } else {
       vblank_without_draw = 0;
       *GS_REG_CSR |= 2;
@@ -103,6 +105,12 @@ int main(int argc, char *argv[]) {
     p2g_fatal("no assets to work with");
     return 1;
   }
+
+  if (task_system_init()) {
+    p2g_fatal("task system setup");
+    return 1;
+  }
+
   struct gamectx ctx = {0};
 
   size_t player_index = 0;
