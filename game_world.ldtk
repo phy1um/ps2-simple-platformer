@@ -401,45 +401,7 @@
 			"savedSelections": [],
 			"cachedPixelData": { "opaqueTiles": "0", "averageColors": "b523" }
 		}
-	], "enums": [], "externalEnums": [], "levelFields": [
-		{
-			"identifier": "textures",
-			"doc": null,
-			"__type": "Array<String>",
-			"uid": 6,
-			"type": "F_String",
-			"isArray": true,
-			"canBeNull": true,
-			"arrayMinLength": null,
-			"arrayMaxLength": null,
-			"editorDisplayMode": "NameAndValue",
-			"editorDisplayScale": 1,
-			"editorDisplayPos": "Above",
-			"editorLinkStyle": "StraightArrow",
-			"editorDisplayColor": null,
-			"editorAlwaysShow": false,
-			"editorShowInWorld": true,
-			"editorCutLongValues": true,
-			"editorTextSuffix": null,
-			"editorTextPrefix": null,
-			"useForSmartColor": false,
-			"exportToToc": false,
-			"searchable": false,
-			"min": null,
-			"max": null,
-			"regex": null,
-			"acceptFileTypes": null,
-			"defaultOverride": null,
-			"textLanguageMode": null,
-			"symmetricalRef": false,
-			"autoChainRef": true,
-			"allowOutOfLevelRef": true,
-			"allowedRefs": "OnlySame",
-			"allowedRefsEntityUid": null,
-			"allowedRefTags": [],
-			"tilesetUid": null
-		}
-	] },
+	], "enums": [], "externalEnums": [], "levelFields": [] },
 	"levels": [
 		{
 			"identifier": "Entry_01",
@@ -455,15 +417,12 @@
 			"useAutoIdentifier": false,
 			"bgRelPath": null,
 			"bgPos": null,
-			"bgPivotX": 0.5,
-			"bgPivotY": 0.5,
+			"bgPivotX": 0,
+			"bgPivotY": 0,
 			"__smartColor": "#959595",
 			"__bgPos": null,
 			"externalRelPath": null,
-			"fieldInstances": [{ "__identifier": "textures", "__type": "Array<String>", "__value": ["rawtiles_0.tga"], "__tile": null, "defUid": 6, "realEditorValues": [{
-				"id": "V_String",
-				"params": ["rawtiles_0.tga"]
-			}] }],
+			"fieldInstances": [],
 			"layerInstances": [
 				{
 					"__identifier": "Foreground",
@@ -623,7 +582,7 @@
 						},
 						{
 							"__identifier": "Decoration_orb_test",
-							"__grid": [15,3],
+							"__grid": [18,7],
 							"__pivot": [0,0],
 							"__tags": ["deco"],
 							"__tile": { "tilesetUid": 17, "x": 0, "y": 0, "w": 64, "h": 64 },
@@ -632,10 +591,10 @@
 							"width": 32,
 							"height": 32,
 							"defUid": 16,
-							"px": [240,48],
+							"px": [288,112],
 							"fieldInstances": [],
-							"__worldX": 240,
-							"__worldY": 48
+							"__worldX": 288,
+							"__worldY": 112
 						},
 						{
 							"__identifier": "Decoration_orb_test",
@@ -987,7 +946,7 @@
 			"__smartColor": "#ADADB5",
 			"__bgPos": null,
 			"externalRelPath": null,
-			"fieldInstances": [{ "__identifier": "textures", "__type": "Array<String>", "__value": [], "__tile": null, "defUid": 6, "realEditorValues": [] }],
+			"fieldInstances": [],
 			"layerInstances": [
 				{
 					"__identifier": "Foreground",
@@ -1815,7 +1774,7 @@
 			"__smartColor": "#ADADB5",
 			"__bgPos": null,
 			"externalRelPath": null,
-			"fieldInstances": [{ "__identifier": "textures", "__type": "Array<String>", "__value": [], "__tile": null, "defUid": 6, "realEditorValues": [] }],
+			"fieldInstances": [],
 			"layerInstances": [
 				{
 					"__identifier": "Foreground",
