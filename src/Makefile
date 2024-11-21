@@ -3,8 +3,8 @@ SRC_FILES=$(shell find . -type f -name '*.c' -not -path './test/*' -not -path '.
 EE_OBJS=$(patsubst %.c,%.o,$(SRC_FILES))
 EE_BIN=game.elf
 EE_INCS+=-I./include
-EE_LIBS= -ldma -ldraw -lgraph -lpad lib/libp2g.a 
-EE_CFLAGS+=-DLOG_TRACE -std=c11
+EE_LIBS= -lpacket -lkernel -ldma -ldraw -lgraph -lpad lib/libp2g.a 
+EE_CFLAGS+=-DLOG_TRACE -std=gnu11
 
 PS2HOST=192.168.20.99
 
@@ -31,6 +31,11 @@ tools/readwad: tools/readwad.c wad.c
 
 tools: tools/packwad tools/readwad
 
+thread_test: thread_test.elf
+	pcsx2-qt $(shell pwd)/thread_test.elf
+
+thread_test.elf: test/thread.c 
+	$(EE_CC) -T$(EE_LINKFILE) $(EE_CFLAGS) $(EE_INCS) $(EE_OPTFLAGS) -o $@ $^ $(EE_LDFLAGS) $(EXTRA_LDFLAGS) $(EE_LIBS)
 
 ifeq ($(platform), PC)
 CFLAGS+=$(EE_INCS) -I./sim/include $(EE_CFLAGS)

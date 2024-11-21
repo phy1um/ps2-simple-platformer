@@ -1,4 +1,6 @@
 #include <stdlib.h>
+#include <kernel.h>
+#include <string.h>
 
 #include <p2g/log.h>
 #include <p2g/pad.h>
@@ -17,6 +19,8 @@
 #ifndef GLOBAl_HEAP_SIZE
 #define GLOBAL_HEAP_SIZE 220*1024
 #endif
+
+struct gamectx *GLOBAL_CTX = 0;
 
 static void *global_alloc(struct gamectx *self, size_t num, size_t size) {
   size_t total = num*size;
@@ -82,6 +86,7 @@ static int ctx_load_statics(struct gamectx *ctx) {
 }
 
 int ctx_init(struct gamectx *ctx, struct vram_slice *vram) {
+  GLOBAL_CTX = ctx;
   ctx->global_heap = calloc(1, GLOBAL_HEAP_SIZE);
   ctx->global_heap_head = 0;
   ctx->global_heap_size = GLOBAL_HEAP_SIZE;
@@ -110,6 +115,15 @@ int ctx_init(struct gamectx *ctx, struct vram_slice *vram) {
     ctx->levels[i].vram.start = vram_head;
     ctx->levels[i].vram.head = vram_head;
     ctx->levels[i].vram.end = vram_head + vram_level_size;
+    ee_sema_t sema_params = {
+      .init_count = 1,
+      .max_count = 1,
+    };
+    ctx->levels[i].sema_lock_id = CreateSema(&sema_params);
+    if (ctx->levels[i].sema_lock_id == -1) {
+      logerr("level %d: failed to create sema", i);
+      return 1;
+    }
     // vram_head += vram_level_size;
     logdbg("init level slot %d: heap @ %p, size = %d", i, ctx->levels[i].heap, LEVEL_HEAP_SIZE);
   }
@@ -146,13 +160,47 @@ int ctx_free_entity(struct gamectx *ctx, size_t index) {
   return 0;
 }
 
+static int level_poll_lock(struct gamectx *ctx, int level_id) {
+  if (PollSema(ctx->levels[level_id].sema_lock_id) == -1) {
+    return -1;
+  }
+  // we have the lock
+  return 0;
+}
+
+static int level_wait_lock(struct gamectx *ctx, int level_id) {
+  WaitSema(ctx->levels[level_id].sema_lock_id);
+  return 0;
+}
+
+
+
+static int level_signal_lock(struct gamectx *ctx, int level_id) {
+  // TODO: what does the RV of this function mean????
+  SignalSema(ctx->levels[level_id].sema_lock_id); 
+  return 0;
+}
+
+// WARNING: only call if we have the lock for this level
+static int __locked_level_point_free(struct levelctx *lvl, float x, float y) {
+  if (!lvl->test_point) {
+    return 1;
+  }
+  int hit = lvl->test_point(lvl, x, y);
+  return !hit;
+}
+
+
 int ctx_is_free_point(struct gamectx *ctx, float x, float y) {
   for (int i = 0; i < LEVEL_MAX; i++) {
-    if (!ctx->levels[i].test_point) {
+    if (level_poll_lock(ctx, i) == -1) {
       continue;
     }
-    int hit = ctx->levels[i].test_point(&ctx->levels[i], x, y);
-    if (hit) {
+    // we have the lock
+    int res = __locked_level_point_free(&ctx->levels[i], x, y);
+    level_signal_lock(ctx, i);
+    // released the lock
+    if (!res) {
       return 0;
     }
   }
@@ -160,33 +208,39 @@ int ctx_is_free_point(struct gamectx *ctx, float x, float y) {
 }
 
 int ctx_is_free_box(struct gamectx *ctx, float x, float y, float w, float h) {
-  return ctx_is_free_point(ctx, x, y)
-    && ctx_is_free_point(ctx, x+w, y)
-    && ctx_is_free_point(ctx, x+w, y+h)
-    && ctx_is_free_point(ctx, x, y+h);
+  for (int i = 0; i < LEVEL_MAX; i++) {
+    if (level_poll_lock(ctx, i) == -1) {
+      continue;
+    }
+    struct levelctx *lvl = &ctx->levels[i];
+    int res = __locked_level_point_free(lvl, x, y)
+      && __locked_level_point_free(lvl, x+w, y)
+      && __locked_level_point_free(lvl, x+w, y+h)
+      && __locked_level_point_free(lvl, x, y+h);
+    level_signal_lock(ctx, i);
+    if (!res) {
+      return 0;
+    }
+  }
+  return 1;
 }
 
 int ctx_draw(struct gamectx *ctx) {
-  trace("draw tilemaps");
-  if (ctx->levels[0].active 
-      && camera_contains_bounds(&ctx->camera, 
-        ctx->levels[0].bounds[0],
-        ctx->levels[0].bounds[1],
-        ctx->levels[0].bounds[2],
-        ctx->levels[0].bounds[3])) {
-    if (ctx->levels[0].draw) {
-      ctx->levels[0].draw(ctx, &ctx->levels[0]);
+  for(int i = 0; i < LEVEL_MAX; i++) {
+    if (level_poll_lock(ctx, i) == -1) {
+      continue;
     }
-  }
-  if (ctx->levels[1].active
-      && camera_contains_bounds(&ctx->camera, 
-        ctx->levels[1].bounds[0],
-        ctx->levels[1].bounds[1],
-        ctx->levels[1].bounds[2],
-        ctx->levels[1].bounds[3])) {
-    if (ctx->levels[1].draw) {
-      ctx->levels[1].draw(ctx, &ctx->levels[1]);
+    if (ctx->levels[i].active 
+        && camera_contains_bounds(&ctx->camera, 
+          ctx->levels[i].bounds[0],
+          ctx->levels[i].bounds[1],
+          ctx->levels[i].bounds[2],
+          ctx->levels[i].bounds[3])) {
+      if (ctx->levels[i].draw) {
+        ctx->levels[i].draw(ctx, &ctx->levels[i]);
+      }
     }
+    level_signal_lock(ctx, i);
   }
   
   trace("draw entities");
@@ -212,6 +266,9 @@ int ctx_update(struct gamectx *ctx, float dt) {
   ctx->player_index = 0;
   entity_update_list(ctx->entities, ENTITY_MAX, ctx, dt);
   for (int i = 0; i < LEVEL_MAX; i++) {
+    if (level_poll_lock(ctx, i) == -1) {
+      continue;
+    }
     if (ctx->levels[i].active && ctx->levels[i].update) {
       ctx->levels[i].update(ctx, &ctx->levels[i], dt);
       struct entity *player = ctx_get_player(ctx);
@@ -219,18 +276,25 @@ int ctx_update(struct gamectx *ctx, float dt) {
         ctx->active_level = i;
       }
     }
+    level_signal_lock(ctx, i);
   }
   return 0;
 }
 
 int ctx_reload(struct gamectx *ctx) {
   for (int i = 0; i < LEVEL_MAX; i++) {
+    if (level_poll_lock(ctx, i) == -1) {
+      continue;
+    }
     if (!ctx->levels[i].reload) {
       continue;
     }
     if (ctx->levels[i].reload(ctx, &ctx->levels[i])) {
       logerr("reload level: %d", i); 
+      level_signal_lock(ctx, i);
       return 1;
+    } else {
+      level_signal_lock(ctx, i);
     }
   }
   return 0;
@@ -238,11 +302,18 @@ int ctx_reload(struct gamectx *ctx) {
 
 int ctx_load_level(struct gamectx *ctx, level_init_fn fn, const char *arg) {
   unsigned int tgt_index = (ctx->active_level + 1) % LEVEL_MAX;
+  level_wait_lock(ctx, tgt_index);
   struct levelctx *x = &ctx->levels[tgt_index];
-  if (x->active) {
-    ctx_free_level(ctx);
+  if (x->loaded_name != 0 && strcmp(x->loaded_name, arg) == 0) {
+    return 0;
   }
-  return fn(ctx, x, arg);
+
+  if (x->active) {
+    __locked_ctx_free_level(ctx, tgt_index);
+  }
+  int rc = fn(ctx, x, arg);
+  level_signal_lock(ctx, tgt_index);
+  return rc;
 }
 
 int ctx_swap_active_level(struct gamectx *ctx) {
@@ -251,8 +322,7 @@ int ctx_swap_active_level(struct gamectx *ctx) {
   return 0;
 }
 
-int ctx_free_level(struct gamectx *ctx) {
-  unsigned int tgt_index = (ctx->active_level + 1) % LEVEL_MAX;
+int __locked_ctx_free_level(struct gamectx *ctx, int tgt_index) {
   struct levelctx *x = &ctx->levels[tgt_index];
   x->active = 0;
   x->draw = 0;

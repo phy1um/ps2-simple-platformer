@@ -30,7 +30,7 @@ void run_ctx_loop(struct gamectx *ctx) {
   while(1) {
     pad_frame_start();
     pad_poll();
-    trace("frame start - dma wait");
+    logdbg("frame start - dma wait");
     // dma_wait_fast();
     draw_frame_start();
     if (first_frame) {
