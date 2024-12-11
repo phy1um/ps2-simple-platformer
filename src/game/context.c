@@ -305,6 +305,8 @@ int ctx_load_level(struct gamectx *ctx, level_init_fn fn, const char *arg) {
   level_wait_lock(ctx, tgt_index);
   struct levelctx *x = &ctx->levels[tgt_index];
   if (x->loaded_name != 0 && strcmp(x->loaded_name, arg) == 0) {
+    info("skip load: level already loaded in slot %d", tgt_index);
+    level_signal_lock(ctx, tgt_index);
     return 0;
   }
 
