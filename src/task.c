@@ -17,13 +17,16 @@ int task_list_lock = 0;
 
 void load_level_task_fn(void *task_id_p) {
   size_t task_id = (size_t)task_id_p;
+  logdbg("load level: start task");
   WaitSema(task_list_lock);
+  logdbg("load level: got lock");
   // TODO: maybe need a lock on each task
   if (ctx_load_level(GLOBAL_CTX, fmt_load_level, task_list[task_id].arg)) {
     logerr("level load task failed");
   }
   task_list[task_id].active = 0;
   SignalSema(task_list_lock);
+  logdbg("load level: release lock, done task");
 }
 
 int task_system_init() {
