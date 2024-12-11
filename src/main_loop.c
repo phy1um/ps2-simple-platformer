@@ -30,7 +30,7 @@ void run_ctx_loop(struct gamectx *ctx) {
   while(1) {
     pad_frame_start();
     pad_poll();
-    logdbg("frame start - dma wait");
+    trace("frame start - dma wait");
     // dma_wait_fast();
     draw_frame_start();
     if (first_frame) {
@@ -46,9 +46,9 @@ void run_ctx_loop(struct gamectx *ctx) {
     if (is_in_menu) {
       menu_draw(&menu_state, &ctx->game_font, 10, 10);
     }
-    logdbg("frame end");
+    trace("frame end");
     draw_frame_end();
-    logdbg("sleep until vblank end");
+    trace("sleep until vblank end");
     SleepThread();
     gs_flip();
     if (is_in_menu) {
