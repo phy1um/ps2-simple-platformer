@@ -84,4 +84,17 @@ void *level_alloc(struct levelctx *lvl, size_t num, size_t size);
 int ctx_print_stats(struct gamectx *ctx);
 struct ee_texture *ctx_get_image_resource(struct gamectx *ctx, const char *name);
 
+struct entity_id ctx_global_entity_spawn(
+    struct gamectx *ctx,
+    struct entity_class *cls, 
+    float pos[2], 
+    void *arg);
+
+struct entity_id ctx_level_entity_spawn(
+    struct gamectx *ctx,
+    struct levelctx *lvl,
+    struct entity_class *cls, 
+    float pos[2], 
+    void *arg);
+
 #endif

@@ -416,4 +416,23 @@ static int ctx_load_statics(struct gamectx *ctx) {
   return 0;
 }
 
+struct entity_id ctx_global_entity_spawn(
+    struct gamectx *ctx,
+    struct entity_class *cls, 
+    float pos[2], 
+    void *arg
+) {
+  return entity_spawn(ctx->entities, ENTITY_MAX, cls, &ctx->global_alloc, pos, arg);
+}
+
+struct entity_id ctx_level_entity_spawn(
+    struct gamectx *ctx,
+    struct levelctx *lvl,
+    struct entity_class *cls, 
+    float pos[2], 
+    void *arg
+) {
+  return entity_spawn(ctx->entities, ENTITY_MAX, cls, &lvl->allocator, pos, arg);
+}
+
 

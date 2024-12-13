@@ -20,10 +20,9 @@
 #include "vram.h"
 #include "game/context.h"
 #include "game/camera.h"
-#include "game/player.h"
+#include "game/classes.h"
 #include "menu/menu.h"
 #include "task.h"
-#include "game/classes.h"
 
 #include "levels/levels.h"
 #include "levels/fmt.h"
@@ -130,7 +129,7 @@ int main(int argc, char *argv[]) {
   ctx_swap_active_level(&ctx);
 
   float pp[2] = {200., 100.};
-  struct entity_id pid = entity_spawn(ctx.entities, ENTITY_MAX, &class_player, &ctx.global_alloc, pp, 0);
+  struct entity_id pid = ctx_global_entity_spawn(&ctx, &class_player, pp, 0);
   if (pid.index == -1) {
     p2g_fatal("spawn player");
     return 1;
