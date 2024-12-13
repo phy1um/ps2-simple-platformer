@@ -11,8 +11,8 @@
 
 
 static const float EPSILON = 0.0001;
-static const float WIDTH = 9.;
-static const float HEIGHT= 16.;
+static const float WIDTH = 14.;
+static const float HEIGHT= 24.;
 static const float HSPEED = 88.72;
 static const float GROUND_ACCEL = 37.2;
 static const float GRAVITY = 98;
@@ -46,11 +46,20 @@ typedef struct playerdata {
   int pushing_left;
   int pushing_right;
   int has_jump_buffered;
+  int facing_dir;
 } playerdata;
 
 static int player_draw(struct entity *player, float sx, float sy, struct gamectx *ctx) {
+  playerdata *pd = (playerdata *) player->data;
   draw2d_set_colour(0xff, 0xff, 0xff, 0x80);
-  draw2d_rect(sx, sy, player->w, player->h);
+  struct ee_texture *t = ctx_get_image_resource(ctx, "assets/player00.tga");
+  draw_bind_texture(t);
+  draw_upload_ee_texture(t);
+  if (pd->facing_dir == 1) {
+    draw2d_sprite(sx, sy, player->w, player->h, 0, 0, 0.25, 0.4);
+  } else {
+    draw2d_sprite(sx, sy, player->w, player->h, 0.25, 0, 0.5, 0.4);
+  }
   return 0;
 }
 
@@ -66,6 +75,13 @@ static int player_update(struct entity *player, struct gamectx *ctx, float dt) {
   }
   // int jump_impulse = button_held(BUTTON_X);
   playerdata *pd = (playerdata *) player->data;
+  if (impulse_x > 0.1) {
+    pd->facing_dir = 1;
+  }
+  if (impulse_x < -0.1) {
+    pd->facing_dir = 0;
+  }
+
   if (button_pressed(BUTTON_X)) {
     pd->has_jump_buffered = 1;
   }

@@ -4,6 +4,7 @@
 
 #include "entity.h"
 #include "camera.h"
+#include "resource.h"
 #include "../tiles.h"
 #include "../vram.h"
 #include "../draw/font.h"
@@ -51,6 +52,7 @@ struct gamectx {
   size_t global_heap_size;
   struct vram_slice global_vram;
   struct ee_font game_font;
+  struct resources res;
 };
 
 extern struct gamectx *GLOBAL_CTX;
@@ -80,5 +82,6 @@ void *level_alloc(struct levelctx *lvl, size_t num, size_t size);
 
 
 int ctx_print_stats(struct gamectx *ctx);
+struct ee_texture *ctx_get_image_resource(struct gamectx *ctx, const char *name);
 
 #endif

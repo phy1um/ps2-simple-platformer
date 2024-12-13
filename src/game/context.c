@@ -6,6 +6,7 @@
 #include <p2g/pad.h>
 #include "context.h"
 #include "entity.h"
+#include "resource.h"
 #include "../tga.h"
 #include "../tiles.h"
 #include "../draw.h"
@@ -19,6 +20,8 @@
 #ifndef GLOBAl_HEAP_SIZE
 #define GLOBAL_HEAP_SIZE 220*1024
 #endif
+
+static int ctx_load_statics(struct gamectx *ctx);
 
 struct gamectx *GLOBAL_CTX = 0;
 
@@ -59,30 +62,6 @@ void *level_alloc(struct levelctx *lvl, size_t num, size_t size) {
   void *out = lvl->heap + lvl->heap_head;
   lvl->heap_head += total;
   return out;
-}
-
-static int ctx_load_statics(struct gamectx *ctx) {
-  struct ee_texture *tgt = alloc_from(&ctx->global_alloc, 1, sizeof(struct ee_texture));
-  struct tga_data tga;
-  int rc = tga_from_file("assets/8x8.tga", &tga, &ctx->global_alloc);
-  if (rc) {
-    logerr("failed to load font: assets/8x8.tga");
-    return 1;
-  }
-  tgt->pixels = tga.pixels;
-  tgt->size = tga.pixels_size;
-  tgt->width = tga.header.width;
-  tgt->height = tga.header.height;
-  size_t vr_bytes = vram_alloc(&ctx->global_vram, tga.pixels_size, 2048);
-  tgt->vram_addr = vr_bytes/4;
-  if (vr_bytes == VRAM_INVALID) {
-    logerr("font VRAM alloc");
-    return 1;
-  }
-  // tga and pixel data allocated forever!
-  logdbg("load font @ %X", tgt->vram_addr);
-  font_init(&ctx->game_font, tgt, 8, 8, 128, 64, 1.f);
-  return 0;
 }
 
 int ctx_init(struct gamectx *ctx, struct vram_slice *vram) {
@@ -378,4 +357,64 @@ int ctx_print_stats(struct gamectx *ctx) {
   }
   return 0;
 }
+
+struct ee_texture *ctx_get_image_resource(struct gamectx *ctx, const char *name) {
+  struct ee_texture *res = resource_get_image(&ctx->res, name);
+  if (!res) {
+    logerr("texture not found: %s", name);
+    return 0;
+  }
+  return res;
+}
+
+static int ctx_load_image_resource(struct gamectx *ctx, const char *name) {
+  struct ee_texture *tgt = alloc_from(&ctx->global_alloc, 1, sizeof(struct ee_texture));
+  struct tga_data tga;
+  int rc = tga_from_file(name, &tga, &ctx->global_alloc);
+  if (rc) {
+    logerr("load image resource: %s", name);
+    return 1;
+  }
+  tgt->pixels = tga.pixels;
+  tgt->size = tga.pixels_size;
+  tgt->width = tga.header.width;
+  tgt->height = tga.header.height;
+  size_t vr_bytes = vram_alloc(&ctx->global_vram, tga.pixels_size, 2048);
+  tgt->vram_addr = vr_bytes/4;
+  if (vr_bytes == VRAM_INVALID) {
+    logerr("texture VRAM alloc: %s", name);
+    return 1;
+  }
+
+  if (resource_insert_image(&ctx->res, name, tgt)) {
+    logerr("insert texture to resource map: %s", name);
+    return 1;
+  }
+
+  return 0;
+}
+
+static int ctx_load_statics(struct gamectx *ctx) {
+  if (ctx_load_image_resource(ctx, "assets/8x8.tga")) {
+    logerr("font texture load");
+    return 1;
+  }
+  if (ctx_load_image_resource(ctx, "assets/player00.tga")) {
+    logerr("player texture load");
+    return 1;
+  }
+
+  // init fonts
+  struct ee_texture *fnt = ctx_get_image_resource(ctx, "assets/8x8.tga");
+  if (!fnt) {
+    logerr("null font");
+    return 1;
+  }
+  // tga and pixel data allocated forever!
+  logdbg("load font @ %X", fnt->vram_addr);
+  font_init(&ctx->game_font, fnt, 8, 8, 128, 64, 1.f);
+
+  return 0;
+}
+
 
