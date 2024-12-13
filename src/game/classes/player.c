@@ -1,6 +1,6 @@
-#include "entity.h"
-#include "context.h"
-#include "../levels/levels.h"
+#include "../entity.h"
+#include "../context.h"
+#include "../../levels/levels.h"
 
 #include <stdlib.h>
 #include <math.h>
@@ -56,9 +56,9 @@ static int player_draw(struct entity *player, float sx, float sy, struct gamectx
   draw_bind_texture(t);
   draw_upload_ee_texture(t);
   if (pd->facing_dir == 1) {
-    draw2d_sprite(sx, sy, player->w, player->h, 0, 0, 0.25, 0.4);
+    draw2d_sprite(sx, sy, WIDTH, HEIGHT, 0, 0, 0.25, 0.4);
   } else {
-    draw2d_sprite(sx, sy, player->w, player->h, 0.25, 0, 0.5, 0.4);
+    draw2d_sprite(sx, sy, WIDTH, HEIGHT, 0.25, 0, 0.5, 0.4);
   }
   return 0;
 }
@@ -114,8 +114,8 @@ static int player_update(struct entity *player, struct gamectx *ctx, float dt) {
     //logdbg("apply player gravity: %f", pd->vy);
   } else {
     float foot_x0 = player->x + FOOT_OFFSET_X; 
-    float foot_x1 = player->x + player->w - FOOT_OFFSET_X; 
-    float foot_y = player->y + player->h + FOOT_OFFSET_Y;
+    float foot_x1 = player->x + WIDTH - FOOT_OFFSET_X; 
+    float foot_y = player->y + HEIGHT + FOOT_OFFSET_Y;
     if (ctx_is_free_point(ctx, foot_x0, foot_y) && ctx_is_free_point(ctx, foot_x1, foot_y)) {
       if (pd->state == STAND) {
         pd->state = FALL;
@@ -135,16 +135,8 @@ static int player_update(struct entity *player, struct gamectx *ctx, float dt) {
   return 0;
 }
 
-int player_new(struct entity *tgt, float x, float y) {
-  tgt->active = 1;
-  tgt->x = x;
-  tgt->y = y;
-  tgt->w = WIDTH;
-  tgt->h = HEIGHT;
-  tgt->draw = player_draw;
-  tgt->update = player_update;
-  tgt->data = calloc(1, sizeof(playerdata));
-  playerdata *pd = (playerdata*)tgt->data;
+int player_init(struct entity *self, void *arg) {
+  playerdata *pd = (playerdata *) self->data;
   pd->state = STAND;
   return 0;
 }
@@ -155,10 +147,10 @@ static void collision_resolve(struct gamectx *ctx, struct entity *e, float dx, f
   float tgt_y = e->y + dy;
 
   // resolve horiz collision  
-  if (!ctx_is_free_box(ctx, tgt_x, e->y, e->w, e->h)) {
+  if (!ctx_is_free_box(ctx, tgt_x, e->y, WIDTH, HEIGHT)) {
     if (dx > 0) {
-      int target_grid_place = (tgt_x+e->w) / GRID_SIZE; 
-      tgt_x = (target_grid_place * GRID_SIZE) - e->w - 0.001;
+      int target_grid_place = (tgt_x+WIDTH) / GRID_SIZE; 
+      tgt_x = (target_grid_place * GRID_SIZE) - WIDTH - 0.001;
       pd->pushing_right = 1;
       pd->vx = 0;
       
@@ -171,10 +163,10 @@ static void collision_resolve(struct gamectx *ctx, struct entity *e, float dx, f
   }
 
   // resolve vertical collision
-  if (!ctx_is_free_box(ctx, tgt_x, tgt_y, e->w, e->h)) {
+  if (!ctx_is_free_box(ctx, tgt_x, tgt_y, WIDTH, HEIGHT)) {
     if (dy > 0) {
-      int target_grid_place = (tgt_y+e->h) / GRID_SIZE; 
-      tgt_y = (target_grid_place * GRID_SIZE) - e->h - (FOOT_OFFSET_Y*0.5);
+      int target_grid_place = (tgt_y+HEIGHT) / GRID_SIZE; 
+      tgt_y = (target_grid_place * GRID_SIZE) - HEIGHT - (FOOT_OFFSET_Y*0.5);
       if (pd->state != STAND) {
         //logdbg("hit the ground @ [%f, %f]", tgt_x, tgt_y);
       }
@@ -194,3 +186,12 @@ static void collision_resolve(struct gamectx *ctx, struct entity *e, float dx, f
   e->y = tgt_y;
   // info("resolve: [%f, %f]", tgt_y, tgt_y);
 }
+
+struct entity_class class_player = {
+  .identifier = "PLAYER",
+  .init = player_init,
+  .update = player_update,
+  .draw = player_draw,
+  .data_size = sizeof(playerdata),
+};
+

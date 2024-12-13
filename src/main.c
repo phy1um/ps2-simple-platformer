@@ -23,6 +23,7 @@
 #include "game/player.h"
 #include "menu/menu.h"
 #include "task.h"
+#include "game/classes.h"
 
 #include "levels/levels.h"
 #include "levels/fmt.h"
@@ -117,16 +118,6 @@ int main(int argc, char *argv[]) {
 
   struct gamectx ctx = {0};
 
-  size_t player_index = 0;
-  if (ctx_next_entity(&ctx, &player_index)) {
-    logerr("man really went wrong here");
-    p2g_fatal("dead on arrival");
-    return 1;
-  }
-  struct entity *player = &(ctx.entities[player_index]);
-
-  player_new(player, 200., 200.);
-
   float cam_bounds[] = {640., 448.};
   float cam_fbox[] = {50., 50.};
   camera_init(&ctx.camera, cam_bounds, cam_fbox);
@@ -137,6 +128,13 @@ int main(int argc, char *argv[]) {
   }
   ctx_load_level(&ctx, fmt_load_level, "assets/entry_01.ps2lvl");
   ctx_swap_active_level(&ctx);
+
+  float pp[2] = {200., 100.};
+  struct entity_id pid = entity_spawn(ctx.entities, ENTITY_MAX, &class_player, &ctx.global_alloc, pp, 0);
+  if (pid.index == -1) {
+    p2g_fatal("spawn player");
+    return 1;
+  }
 
   gs_set_ztest(2);
 
