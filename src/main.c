@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  draw2d_clear_colour(33, 38, 63);
+  draw2d_clear_colour(10, 10, 10);
 
   main_cleanup_threadid = GetThreadId();
 
