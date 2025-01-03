@@ -7,10 +7,17 @@ FILE_EXT = ".ps2lvl"
 FMT_ID = b"PS2L"
 VERSION = 0
 NAME_LEN = 24
-TILE_DEF_SIZE = 26
+TILE_DEF_SIZE = 28
 ASSET_DEF_SIZE = 10
 AREA_DEF_SIZE = 28
 DECO_DEF_SIZE = 28
+
+def dbg_print_map(m, w, h):
+    for iy in range(h):
+        for ix in range(w):
+            ind = iy*w + ix
+            print(f"{m[ind]}", end=",")
+        print()
 
 def rewrite_png(s):
     return s.replace(".png", ".tga")
@@ -60,6 +67,7 @@ class Map(object):
                 tiles_h,
                 0)
         m.map = o.get_tile_map()
+        dbg_print_map(m.map, tiles_w, tiles_h)
         return m
 
     def __init__(self, ox, oy, kind, w, h, texture):
@@ -129,6 +137,8 @@ class Level(object):
                 oy,
                 tileset_lookup)
         for asset in o.textures():
+            if asset == None:
+                continue
             as_tga = rewrite_png(asset)
             print(f"replaced texture name: {as_tga}")
             level.add_texture_asset(as_tga)
@@ -136,6 +146,7 @@ class Level(object):
             level.add_area(Area.from_ldtk(area))
         for m in o.tile_layers():
             if not m.is_empty():
+                print(f"add tile layer: {m.get_name()}")
                 level.add_map(Map.from_ldtk(m))
         for d in o.deco_entities():
             level.add_decoration(d)
@@ -190,8 +201,8 @@ class Level(object):
         for i,m in enumerate(self.maps):
             key = f"MAP:{i}"
             map_offset = dc.alloc(key, m.dimensions[0]*m.dimensions[1])
-            bs.append(struct.pack("<2i2IHiI", m.offset[0], m.offset[1],
-                               m.dimensions[0], m.dimensions[1],
+            bs.append(struct.pack("<2i2IHHiI", m.offset[0], m.offset[1],
+                               m.dimensions[0], m.dimensions[1], 24,
                                encode_tilemap_kind(m.kind), m.texture, map_offset))
             dc.write_to(key, bytes(m.map))
         return b"".join(bs)

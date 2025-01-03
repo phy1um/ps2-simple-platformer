@@ -29,6 +29,7 @@ struct __attribute__((packed)) level_header {
 struct __attribute__((packed)) level_tilemap_def {
   int32_t local_offset[2];
   uint32_t size[2];
+  uint16_t grid_size;
   uint16_t tilemap_kind;
   uint32_t asset_ref;
   uint32_t map_file_offset;
