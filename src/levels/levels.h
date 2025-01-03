@@ -2,7 +2,7 @@
 #ifndef SRC_LEVELS_LEVELS_H
 #define SRC_LEVELS_LEVELS_H
 
-#define GRID_SIZE 16
+#define GRID_SIZE 24
 
 #include "../game/context.h"
 
