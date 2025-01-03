@@ -26,7 +26,7 @@ uint32_t wad_hash_name(const unsigned char *fname) {
   while (c = *fname++) {
     hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
   }
-  trace("hash name %s -> %X", fs, hash);
+  logdbg("hash name %s -> %X", fs, hash);
   return hash;
 }
 
@@ -67,7 +67,7 @@ size_t wad_read_file_part(struct wad_file *w, uint32_t file_name_hash,
   }
   struct wad_index *index = get_index_entry(w, file_name_hash);
   if (!index) {
-    logerr("file not found: %d", file_name_hash);
+    logerr("file not found: %X", file_name_hash);
     return 0;
   }
   if (file_end == 0) {
