@@ -60,6 +60,7 @@ class Map(object):
         (tiles_w, tiles_h) = o.get_dimensions()
         (ox, oy) = o.get_offset()
         m = Map(
+                o.get_grid_size(),
                 ox,
                 oy,
                 o.get_kind(),
@@ -70,7 +71,8 @@ class Map(object):
         dbg_print_map(m.map, tiles_w, tiles_h)
         return m
 
-    def __init__(self, ox, oy, kind, w, h, texture):
+    def __init__(self, grid_size, ox, oy, kind, w, h, texture):
+        self.grid_size = grid_size
         self.offset = (ox, oy)
         self.kind = kind
         self.dimensions = (w, h)
@@ -202,7 +204,7 @@ class Level(object):
             key = f"MAP:{i}"
             map_offset = dc.alloc(key, m.dimensions[0]*m.dimensions[1])
             bs.append(struct.pack("<2i2IHHiI", m.offset[0], m.offset[1],
-                               m.dimensions[0], m.dimensions[1], 24,
+                               m.dimensions[0], m.dimensions[1], m.grid_size,
                                encode_tilemap_kind(m.kind), m.texture, map_offset))
             dc.write_to(key, bytes(m.map))
         return b"".join(bs)
