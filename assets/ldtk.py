@@ -1,5 +1,9 @@
+
+_img_widths = {}
 def get_image_width(s):
-    return 64
+    if s not in _img_widths:
+        raise Exception(f"unknown tileset {s}")
+    return _img_widths[s]
 
 class _LDTKBase(object):
     def __init__(self, o):
@@ -51,6 +55,9 @@ class LDTKTileset(_LDTKBase):
 
     def get_rel_path(self):
         return self._dict["relPath"]
+
+    def get_size(self):
+        return (self._dict["pxWid"], self._dict["pxHei"])
 
 class LDTKEntity(_LDTKBase):
     def __init__(self, o):
@@ -126,7 +133,38 @@ class LDTKIntGridLayer(_LDTKLayerBase):
         return out
 
     def get_kind(self):
-            return "collision"
+        return "collision"
+
+class LDTKAutoTileLayer(_LDTKLayerBase):
+    def __init__(self, o):
+        super().__init__(o)
+
+    def get_kind(self):
+        return "deco"
+
+    def get_tileset(self):
+        if "__tilesetRelPath" in self._dict:
+            return self._dict["__tilesetRelPath"]
+        else:
+            return ""
+
+    def get_tile_map(self):
+        (w, h) = self.get_dimensions()
+        grid = self.get_grid_size()
+        out = [0]*(w*h)
+        tileset_img = self._dict["__tilesetRelPath"]
+        src_width = get_image_width(tileset_img)
+        for tile in self._dict["autoLayerTiles"]:
+            [x, y] = tile["px"]
+            [sx, sy] = tile["src"]
+            grid_x = x//grid
+            grid_y = y//grid
+            ind = grid_y*w + grid_x
+            v = (sy//grid)*(src_width//grid) + (sx//grid)
+            out[ind] = v + 1
+            # print(f"set map [deco]: {ind} = {v} ({sx}, {sy} = {v})")
+        return out
+
 
 class LDTKLevel(_LDTKBase):
     def __init__(self, o):
@@ -138,6 +176,7 @@ class LDTKLevel(_LDTKBase):
     def textures(self):
         for layer in self.tile_layers():
             if layer.get_kind() == "deco" and not layer.is_empty():
+                print(f"got tile layer: {layer.get_name()}")
                 yield layer.get_tileset()
         # TODO: iterate over entities too
 
@@ -160,7 +199,10 @@ class LDTKLevel(_LDTKBase):
             if layer["__type"] == "Tiles":
                 yield LDTKTileLayer(layer)
             elif layer["__type"] == "IntGrid":
-                yield LDTKIntGridLayer(layer)
+                if "autoLayerTiles" in layer and len(layer["autoLayerTiles"]) > 0:
+                    yield LDTKAutoTileLayer(layer)
+                else:
+                    yield LDTKIntGridLayer(layer)
 
     def entity_layers(self):
         for layer in self._dict["layerInstances"]:
@@ -170,6 +212,14 @@ class LDTKLevel(_LDTKBase):
 class LDTK(object):
     def __init__(self, o):
         self._dict = o
+        self._register()
+
+    def _register(self):
+        for tileset in self.tilesets():
+            w,h = tileset.get_size()
+            name = tileset.get_rel_path()
+            print(f"register tileset width: {name}")
+            _img_widths[name] = w
 
     def get_tileset_by_uid(self, uid):
         for ts in self._dict["defs"]["tilesets"]:
