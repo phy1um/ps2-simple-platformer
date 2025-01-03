@@ -47,6 +47,7 @@ int main(int argc, char *argv[]) {
 
   ctx_init(&ctx, &vram);
   ctx_load_level(&ctx, fmt_load_level, "assets/entry_01.ps2lvl");
+  ctx_load_level(&ctx, fmt_load_level, "assets/entry_02.ps2lvl");
 
   return 0;
 }
