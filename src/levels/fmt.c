@@ -42,12 +42,12 @@ static int map_biggest_dims(struct level_tilemap_def *ld, size_t count, int *w, 
   *w = 0;
   *h = 0;
   for (int i = 0; i < count; i++) {
-    int gw = ld[i].size[0]*GRID_SIZE;
+    int gw = ld[i].size[0]*ld->grid_size;
     if (gw > *w) {
       //logdbg("biggest dim w: %d", gw);
       *w = gw;
     }
-    int gh = ld[i].size[1]*GRID_SIZE;
+    int gh = ld[i].size[1]*ld->grid_size;
     if (gh > *h) {
       //logdbg("biggest dim h: %d", gh);
       *h = gh;
@@ -187,7 +187,7 @@ int load_level_maps(
       }
       tgt->texture_index = t->asset_ref;
     }
-    tile_map_init(&tgt->tiles, t->size[0], t->size[1], GRID_SIZE, 
+    tile_map_init(&tgt->tiles, t->size[0], t->size[1], t->grid_size, 
         header->world_offset[0]+t->local_offset[0], 
         header->world_offset[1]+t->local_offset[1], 
         &lvl->allocator);
@@ -415,7 +415,7 @@ static int loaded_draw(struct gamectx *ctx, struct levelctx *lvl) {
     }
     struct ee_texture *tex = &loaded->textures[tm->texture_index];
     draw_bind_texture(tex);
-    draw_tile_map(&tm->tiles, GRID_SIZE, tex, &ctx->camera);
+    draw_tile_map(&tm->tiles, tm->tiles.grid_size, tex, &ctx->camera);
   }
   for (int i = 0; i < loaded->deco_count; i++) {
     struct loaded_deco *d = &loaded->decos[i];

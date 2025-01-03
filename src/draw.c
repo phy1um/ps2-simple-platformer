@@ -10,8 +10,6 @@
 #include "vram.h"
 #include "levels/levels.h"
 
-#define TILE_SIZE GRID_SIZE
-
 int draw_bind_texture(struct ee_texture *t) {
   return draw2d_bind_texture(t->vram_addr, t->width,
     t->height, GS_PSM_32);
@@ -56,7 +54,7 @@ void draw_tile_map(struct tile_map *tm, float tile_square, struct ee_texture *te
     return;
   }
   if (!camera_contains_area(cam, tm->world_offset_x, tm->world_offset_y, 
-        tm->width*GRID_SIZE, tm->height*GRID_SIZE)) {
+        tm->width*tm->grid_size, tm->height*tm->grid_size)) {
     return;
   }
   draw2d_set_colour(0x80, 0x80, 0x80, 0x80);
@@ -66,10 +64,10 @@ void draw_tile_map(struct tile_map *tm, float tile_square, struct ee_texture *te
       if (t != 0 && t != TILE_INVALID) {
         put_tile(tex,
             tile_square,
-            tm->world_offset_x + TILE_SIZE*x - cam->position[0], 
-            tm->world_offset_y + TILE_SIZE*y - cam->position[1], 
-            TILE_SIZE, 
-            TILE_SIZE, 
+            tm->world_offset_x + tm->grid_size*x - cam->position[0], 
+            tm->world_offset_y + tm->grid_size*y - cam->position[1], 
+            tm->grid_size, 
+            tm->grid_size, 
             t-1);
       }
     }
