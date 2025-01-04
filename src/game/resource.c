@@ -1,7 +1,7 @@
 #include <string.h>
 
 #include "resource.h"
-#include "hash.h"
+#include "../hash.h"
 
 int resource_insert_image(struct resources *res, const char *name, struct ee_texture *tex) {
   for (int i = 0; i < IMAGE_MAX; i++) {

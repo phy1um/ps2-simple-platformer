@@ -1,7 +1,7 @@
 #include <p2g/log.h>
 
 #include "trigger.h"
-#include "task.h"
+#include "../task.h"
 #include "../levels/fmt.h"
 
 static uint32_t last_trigger_id = -1;
