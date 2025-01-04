@@ -10,7 +10,6 @@
 #include "game/context.h"
 #include "levels/fmt.h"
 
-#define TASK_LIST_SIZE 10
 static size_t task_list_head = 0;
 static struct task_async task_list[TASK_LIST_SIZE];
 int task_list_lock = 0;
@@ -41,7 +40,7 @@ int task_system_init() {
   }
   for (int i = 0; i < TASK_LIST_SIZE; i++) {
     task_list[i].active = 0;
-    task_list[i].stack = memalign(64, TASK_STACK_LEN);
+    task_list[i].stack = memalign(64, TASK_STACK_SIZE);
   }
   return 0;
 }
@@ -71,7 +70,7 @@ int task_submit(enum task_type type, const char *arg) {
   strncpy(next->arg, arg, TASK_ARG_LEN);
   ee_thread_t task_thread = {
     .stack = next->stack,
-    .stack_size = TASK_STACK_LEN,
+    .stack_size = TASK_STACK_SIZE,
     .gp_reg = &_gp,
     .initial_priority = 15,
   };

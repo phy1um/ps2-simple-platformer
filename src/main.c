@@ -31,9 +31,13 @@
 #define VBLANK_TIMEOUT_MAX 999999
 #endif
 
+#ifndef MAIN_STACK_SIZE
+#define MAIN_STACK_SIZE 0x4000
+#endif
+
 void run_ctx_loop(struct gamectx *ctx);
 
-unsigned char ctx_stack[0x800] __attribute__((aligned(64)));
+unsigned char ctx_stack[MAIN_STACK_SIZE] __attribute__((aligned(64)));
 static s32 main_cleanup_threadid = 0;
 static s32 main_event_loop_threadid = 0;
 
