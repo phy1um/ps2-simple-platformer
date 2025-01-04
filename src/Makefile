@@ -1,6 +1,8 @@
 
-SRC_FILES=$(shell find . -type f -name '*.c' -not -path './test/*' -not -path './sim/*' -not -path './tools/*')
-EE_OBJS=$(patsubst %.c,%.o,$(SRC_FILES))
+SRC_FILES=$(shell find . -type f -name '*.c' -not -path './test/*' -not -path './sim/*' -not -path './tools/*') 
+EE_OBJS=$(patsubst %.c,%.o,$(SRC_FILES)) 
+SRC_FILES_NO_MAIN=$(shell find . -type f -name '*.c' -not -path './test/*' -not -path './sim/*' -not -path './tools/*' -not -path './main.c')
+OBJS=$(patsubst %.c,%.o,$(SRC_FILES_NO_MAIN)) 
 EE_BIN=game.elf
 EE_INCS+=-I./include
 EE_LIBS= -lpacket -lkernel -ldma -ldraw -lgraph -lpad lib/libp2g.a 
@@ -23,10 +25,10 @@ runps2: $(EE_BIN)
 resetps2:
 	ps2client -h $(PS2HOST) -t 5 reset
 
-tools/packwad: tools/makewad.c wad.c
+tools/packwad: tools/makewad.c wad.c hash.c
 	gcc $(EE_CFLAGS) $(EE_INCS) -g -o $@ $^
 
-tools/readwad: tools/readwad.c wad.c
+tools/readwad: tools/readwad.c wad.c hash.c
 	gcc $(EE_CFLAGS) $(EE_INCS) -g -o $@ $^
 
 tools: tools/packwad tools/readwad
@@ -40,10 +42,10 @@ thread_test.elf: test/thread.c
 ifeq ($(platform), PC)
 CFLAGS+=$(EE_INCS) -I./sim/include $(EE_CFLAGS)
 
-$(EE_BIN): $(EE_OBJS) sim/p2g.o
+$(EE_BIN): $(EE_OBJS) sim/p2g.o sim/kernel.o
 	gcc -g -o sim.elf $(CFLAGS) $^
 
-level_test: test/level_load.o game/context.o io.o levels/fmt.o io.o vram.o tiles.o game/entity.o wad.o alloc.o tga.o game/camera.o levels/test_load.o levels/test_entry.o levels/test_adj.o levels/shared.o game/trigger.o
+level_test: $(OBJS) sim/p2g.o sim/kernel.o test/level_load.o
 	gcc -g -o tst $^ $(CFLAGS)
 else
 include $(PS2SDK)/samples/Makefile.eeglobal
