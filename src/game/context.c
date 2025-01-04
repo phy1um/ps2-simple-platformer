@@ -262,9 +262,6 @@ int ctx_update(struct gamectx *ctx, float dt) {
 
 int ctx_reload(struct gamectx *ctx) {
   for (int i = 0; i < LEVEL_MAX; i++) {
-    if (level_poll_lock(ctx, i) == -1) {
-      continue;
-    }
     if (!ctx->levels[i].reload) {
       continue;
     }
@@ -272,14 +269,16 @@ int ctx_reload(struct gamectx *ctx) {
       logerr("reload level: %d", i); 
       level_signal_lock(ctx, i);
       return 1;
-    } else {
-      level_signal_lock(ctx, i);
     }
   }
   return 0;
 }
 
 int ctx_load_level(struct gamectx *ctx, level_init_fn fn, const char *arg) {
+  if (!ctx) {
+    logerr("NULL context");
+    return 1;
+  }
   unsigned int tgt_index = (ctx->active_level + 1) % LEVEL_MAX;
   level_wait_lock(ctx, tgt_index);
   struct levelctx *x = &ctx->levels[tgt_index];
