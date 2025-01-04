@@ -4,9 +4,11 @@
 #include <p2g/log.h>
 
 #include "wad.h"
+#include "hash.h"
 
 // private functions
 struct wad_index * get_index_entry(struct wad_file *w, uint32_t name_hash) {
+  trace("searching for index entry %d: (index size = %d)", name_hash, w->header.index_entries);
   for (int i = 0; i < w->header.index_entries; i++) {
     trace("test index %X vs %X", name_hash, w->index[i].hash);
     if (w->index[i].hash == name_hash) {
@@ -18,16 +20,8 @@ struct wad_index * get_index_entry(struct wad_file *w, uint32_t name_hash) {
 
 // public api
 
-// djb2 from http://www.cse.yorku.ca/~oz/hash.html
 uint32_t wad_hash_name(const unsigned char *fname) {
-  const char *fs = fname;
-  uint32_t hash = 5381;
-  unsigned char c;
-  while (c = *fname++) {
-    hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
-  }
-  logdbg("hash name %s -> %X", fs, hash);
-  return hash;
+  return hash_fnv1a_32(fname, 0);
 }
 
 int wad_open(const char *filename, struct wad_file *tgt) {
