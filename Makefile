@@ -2,7 +2,7 @@
 .PHONY: tools
 tools:
 	$(MAKE) -C src tools
-	mkdir tools
+	mkdir -p tools
 	cp src/tools/readwad tools/readwad
 	cp src/tools/packwad tools/packwad
 
