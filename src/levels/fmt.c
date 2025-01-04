@@ -458,7 +458,7 @@ static int loaded_draw(struct gamectx *ctx, struct levelctx *lvl) {
 static int loaded_reload(struct gamectx *ctx, struct levelctx *lvl) {
   vram_slice_reset_head(&lvl->vram);
   lvl->heap_head = 0;
-  char fname[120];
+  char fname[121];
   strncpy(fname, lvl->loaded_name, 120);
   return fmt_load_level(ctx, lvl, fname);
 }
