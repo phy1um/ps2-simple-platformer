@@ -2,7 +2,7 @@
 #define SRC_TASK_H
 
 #define TASK_ARG_LEN 50
-#define TASK_STACK_LEN 0x800
+#define TASK_STACK_LEN 0x1000
 
 enum task_type {
   TASK_LOAD_LEVEL,
