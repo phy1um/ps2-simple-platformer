@@ -4,5 +4,6 @@
 #include "entity.h" 
 
 extern struct entity_class class_player;
+extern struct entity_class CLASS_TESTER;
 
 #endif

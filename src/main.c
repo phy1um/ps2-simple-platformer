@@ -135,6 +135,8 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
+  ctx_global_entity_spawn(&ctx, &CLASS_TESTER, pp, 0);
+
   gs_set_ztest(2);
 
   if (register_wake_on_vblank()) {
