@@ -15,7 +15,6 @@
 #include "vram.h"
 #include "game/context.h"
 #include "game/camera.h"
-#include "game/player.h"
 #include "menu/menu.h"
 
 #include "levels/levels.h"
