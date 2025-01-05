@@ -16,8 +16,12 @@ int draw_bind_texture(struct ee_texture *t) {
 }
 
 int draw_upload_ee_texture(struct ee_texture *t) {
+  if (!t) {
+    logerr("NULL texture");
+    return 1;
+  }
   if (t->width == 0 || t->height == 0) {
-    logerr("upload texture dimensions: %d x %d", t->width, t->height);
+    logerr("texture dimensions: %d x %d", t->width, t->height);
     return 1;
   }
   draw_upload_texture(t->pixels, t->size, t->width,
