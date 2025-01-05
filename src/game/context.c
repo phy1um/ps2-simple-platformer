@@ -411,7 +411,10 @@ static int ctx_load_statics(struct gamectx *ctx) {
   }
   // tga and pixel data allocated forever!
   logdbg("load font @ %X", fnt->vram_addr);
-  font_init(&ctx->game_font, fnt, 8, 8, 128, 64, 1.f);
+  if(font_init(&ctx->game_font, fnt, 8, 8, 128, 64, 1.f)) {
+    logerr("game font init");
+    return 1;
+  }
 
   return 0;
 }
